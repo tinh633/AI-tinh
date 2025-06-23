@@ -542,121 +542,106 @@
     </footer>
   </div>
 
-  <script>
+ <script>
   (() => {
     // --- Lấy các phần tử trên trang ---
-    const sidebar = document.getElementById('sidebar');
-    const btnToggleSidebar = document.getElementById('btnToggleSidebar');
     const btnClearChat = document.getElementById('btnClearChat');
     const chatForm = document.getElementById('chatForm');
     const chatInput = document.getElementById('chatInput');
     const chatMessages = document.getElementById('chatMessages');
     const btnSend = document.getElementById('btnSend');
 
+    // BIẾN QUAN TRỌNG: Lưu trữ lịch sử chat phía client
+    // Định dạng phải tuân theo API của Gemini
+    let chatHistory = [];
+
     // --- Các hàm xử lý giao diện ---
 
-    // Hàm thêm một tin nhắn vào khung chat
-    function addMessage(text, sender = 'ai', elementId = null) {
+    function addMessageToUI(text, sender) {
       const msg = document.createElement('div');
       msg.className = `message ${sender}`;
-      // Thay thế ký tự xuống dòng bằng thẻ <br> để hiển thị đúng
       msg.innerHTML = text.replace(/\n/g, '<br>');
-      if (elementId) {
-        msg.id = elementId;
-      }
       chatMessages.appendChild(msg);
-      // Tự động cuộn xuống tin nhắn mới nhất
       chatMessages.scrollTop = chatMessages.scrollHeight;
-      return msg; // Trả về phần tử tin nhắn vừa tạo
     }
     
-    // Bật/tắt sidebar trên di động
-    btnToggleSidebar.addEventListener('click', () => {
-      const expanded = btnToggleSidebar.getAttribute('aria-expanded') === 'true';
-      btnToggleSidebar.setAttribute('aria-expanded', String(!expanded));
-      sidebar.classList.toggle('open');
-    });
-
-    // Kích hoạt nút gửi khi có chữ trong ô input
+    // Bật/tắt nút gửi và điều chỉnh chiều cao ô input (không đổi)
     chatInput.addEventListener('input', () => {
       btnSend.disabled = chatInput.value.trim().length === 0;
-      // Tự động điều chỉnh chiều cao ô input
       chatInput.style.height = 'auto';
       chatInput.style.height = chatInput.scrollHeight + 'px';
     });
-    
-    // Cho phép gửi bằng phím Enter (và Shift + Enter để xuống dòng)
     chatInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault(); // Ngăn hành vi xuống dòng mặc định
-            chatForm.dispatchEvent(new Event('submit')); // Kích hoạt sự kiện submit
+            e.preventDefault();
+            chatForm.dispatchEvent(new Event('submit'));
         }
     });
 
-    // --- Các hàm giao tiếp với Backend ---
+    // --- Các hàm giao tiếp với Backend (THAY ĐỔI LỚN) ---
 
-    // Xử lý khi người dùng gửi tin nhắn
     chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const message = chatInput.value.trim();
-      if (!message) return;
+      const messageText = chatInput.value.trim();
+      if (!messageText) return;
 
-      // Hiển thị tin nhắn của người dùng ngay lập tức
-      addMessage(message, 'user');
+      // 1. Thêm tin nhắn của người dùng vào giao diện và lịch sử
+      addMessageToUI(messageText, 'user');
+      chatHistory.push({ role: 'user', parts: [{ text: messageText }] });
 
-      // Xóa ô input và vô hiệu hóa nút gửi
+      // Xóa ô input
+      const currentUserInput = chatInput.value; // Lưu lại để gửi đi
       chatInput.value = '';
       btnSend.disabled = true;
       chatInput.style.height = 'auto';
       chatInput.focus();
 
-      // Hiển thị tin nhắn "AI đang trả lời..."
-      const loadingMsg = addMessage('AI đang trả lời...', 'ai');
+      // Hiển thị tin nhắn "loading"
+      const loadingMsg = addMessageToUI('AI đang trả lời...', 'ai');
       
       try {
-        // Gửi tin nhắn đến server Flask tại endpoint '/chat'
-        const response = await fetch('http://127.0.0.1:5000/chat', {
+        // 2. Gửi tin nhắn MỚI và TOÀN BỘ LỊCH SỬ lên server
+        const response = await fetch('/chat', { // Bỏ http://127.0.0.1:5000 để chạy được trên Render
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ message: message }), // Gửi đi dưới dạng JSON
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+              message: currentUserInput, 
+              history: chatHistory.slice(0, -1) // Gửi lịch sử KHÔNG bao gồm tin nhắn cuối cùng
+          }),
         });
 
-        // Nếu server không trả về kết quả thành công (ví dụ: lỗi 500)
         if (!response.ok) {
-            throw new Error(`Lỗi từ server: ${response.statusText}`);
+            const errorData = await response.json();
+            throw new Error(errorData.error || `Lỗi từ server: ${response.statusText}`);
         }
 
-        // Đọc dữ liệu JSON từ phản hồi của server
         const data = await response.json();
         
-        // Cập nhật tin nhắn "loading" bằng câu trả lời thật của AI
+        // 3. Cập nhật giao diện với câu trả lời của AI
         loadingMsg.innerHTML = data.response.replace(/\n/g, '<br>');
 
+        // 4. Thêm câu trả lời của AI vào lịch sử để dùng cho lần hỏi tiếp theo
+        chatHistory.push({ role: 'model', parts: [{ text: data.response }] });
+
       } catch (error) {
-        // Nếu có lỗi mạng hoặc lỗi từ server, hiển thị thông báo lỗi
         console.error("Lỗi khi gọi API:", error);
-        loadingMsg.textContent = 'Rất tiếc, đã có lỗi xảy ra. Vui lòng thử lại sau.';
+        loadingMsg.innerHTML = 'Rất tiếc, đã có lỗi xảy ra. Vui lòng thử lại sau.';
         loadingMsg.style.color = 'red';
+        // Nếu lỗi, xóa tin nhắn cuối cùng của người dùng khỏi lịch sử
+        chatHistory.pop();
       }
     });
 
     // Xử lý khi nhấn nút xóa cuộc trò chuyện
-    btnClearChat.addEventListener('click', async () => {
-        try {
-            await fetch('http://127.0.0.1:5000/clear', { method: 'POST' });
-            chatMessages.innerHTML = '';
-            addMessage('Xin chào! Tôi có thể giúp gì cho bạn?', 'ai');
-            chatInput.focus();
-        } catch (error) {
-            console.error("Lỗi khi xóa cuộc trò chuyện:", error);
-            alert("Không thể xóa cuộc trò chuyện. Vui lòng kiểm tra lại kết nối tới server.");
-        }
+    btnClearChat.addEventListener('click', () => {
+        chatMessages.innerHTML = '';
+        chatHistory = []; // Chỉ cần xóa lịch sử ở client
+        addMessageToUI('Xin chào! Tôi có thể giúp gì cho bạn về y tế hôm nay?', 'ai');
+        chatInput.focus();
     });
 
     // Thêm tin nhắn chào mừng ban đầu
-    addMessage('Xin chào! Tôi có thể giúp gì cho bạn về y tế hôm nay?', 'ai');
+    addMessageToUI('Xin chào! Tôi có thể giúp gì cho bạn về y tế hôm nay?', 'ai');
   })();
 </script>
 </body>
