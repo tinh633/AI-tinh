@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ứng dụng Chat AI Y tế</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Material+Icons" rel="stylesheet" />
+  <style>
+    /* Reset & base */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+    html {
+      font-family: 'Inter', sans-serif;
+      font-size: 16px;
+      scroll-behavior: smooth;
+    }
+    body {
+      margin: 0;
+      background: #f4f9fc;
+      color: #0a2540;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+    /* Glass morphism variables */
+    :root {
+      --glass-bg: rgba(255 255 255 / 0.65);
+      --glass-shadow: rgba(10, 37, 64, 0.15);
+      --primary-color: #0369a1;
+      --secondary-color: #065f46;
+      --accent-color: #0284c7;
+      --error-color: #dc2626;
+      --success-color: #16a34a;
+      --font-color: #0a2540;
+      --font-color-light: #4b6587;
+      --border-radius: 12px;
+      --transition: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    /* Layout grid */
+    .app-container {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      grid-template-rows: 64px 1fr 48px;
+      grid-template-areas:
+        "header header"
+        "sidebar main"
+        "footer footer";
+      height: 100vh;
+      overflow: hidden;
+      background: #e7f0fa;
+    }
+    /* HEADER */
+    header {
+      grid-area: header;
+      height: 64px;
+      backdrop-filter: saturate(180%) blur(20px);
+      background: var(--glass-bg);
+      box-shadow: 0 4px 30px var(--glass-shadow);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      user-select: none;
+    }
+    header .logo {
+      font-weight: 700;
+      font-size: clamp(1.25rem, 1vw + 0.5rem, 1.5rem);
+      color: var(--primary-color);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      user-select: text;
+      user-drag: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    header .logo .material-icons {
+      font-size: 32px;
+      color: var(--accent-color);
+    }
+    /* Nav in header */
+    header nav {
+      margin-left: auto;
+      display: flex;
+      gap: 24px;
+      align-items: center;
+    }
+    header nav button {
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      color: var(--font-color-light);
+      font-size: 20px;
+      padding: 8px;
+      border-radius: var(--border-radius);
+      transition: background-color var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    header nav button:focus,
+    header nav button:hover {
+      background-color: var(--accent-color);
+      color: white;
+      outline-offset: 2px;
+    }
+    /* Sidebar */
+    aside.sidebar {
+      grid-area: sidebar;
+      background: var(--glass-bg);
+      box-shadow: 4px 0 10px var(--glass-shadow);
+      backdrop-filter: saturate(180%) blur(20px);
+      padding: 24px 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-color) transparent;
+      user-select: none;
+      min-width: 280px;
+    }
+    aside.sidebar::-webkit-scrollbar {
+      width: 8px;
+    }
+    aside.sidebar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    aside.sidebar::-webkit-scrollbar-thumb {
+      background-color: var(--accent-color);
+      border-radius: 10px;
+    }
+    aside.sidebar .menu-title {
+      font-weight: 600;
+      color: var(--primary-color);
+      letter-spacing: 0.05em;
+      font-size: 0.875rem;
+      text-transform: uppercase;
+      padding-left: 8px;
+      margin-bottom: 8px;
+      user-select: text;
+    }
+    aside.sidebar nav.menu {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    aside.sidebar nav.menu a {
+      color: var(--font-color-light);
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      padding: 10px 12px;
+      border-radius: var(--border-radius);
+      transition: background-color var(--transition), color var(--transition);
+      position: relative;
+    }
+    aside.sidebar nav.menu a .material-icons {
+      font-size: 24px;
+      color: var(--accent-color);
+      flex-shrink: 0;
+      user-select: none;
+    }
+    aside.sidebar nav.menu a:hover,
+    aside.sidebar nav.menu a:focus {
+      background-color: var(--accent-color);
+      color: white;
+      outline: none;
+    }
+    aside.sidebar nav.menu a:hover .material-icons,
+    aside.sidebar nav.menu a:focus .material-icons {
+      color: white;
+    }
+    /* Notification Badge */
+    aside.sidebar nav.menu a .badge {
+      font-size: 0.7rem;
+      background: var(--error-color);
+      color: white;
+      min-width: 20px;
+      height: 20px;
+      border-radius: 9999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 700;
+      user-select: none;
+    }
+
+    /* MAIN CONTENT - Chat area */
+    main.main-content {
+      grid-area: main;
+      background: white;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+      min-height: calc(100vh - 64px);
+      overflow: hidden;
+      box-shadow: 0 0 32px rgb(3 105 161 / 0.1);
+      border-radius: var(--border-radius);
+      margin: 16px;
+    }
+    /* Chat header */
+    main.main-content .chat-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #dee3e8;
+      user-select: none;
+    }
+    main.main-content .chat-header h2 {
+      font-weight: 700;
+      color: var(--primary-color);
+      margin: 0;
+      font-size: clamp(1.25rem, 1vw + 0.25rem, 1.5rem);
+    }
+    main.main-content .chat-header button {
+      background: none;
+      border: none;
+      color: var(--accent-color);
+      cursor: pointer;
+      font-size: 28px;
+      border-radius: var(--border-radius);
+      padding: 6px;
+      transition: background-color var(--transition);
+    }
+    main.main-content .chat-header button:focus,
+    main.main-content .chat-header button:hover {
+      background-color: var(--accent-color);
+      color: white;
+      outline-offset: 2px;
+    }
+
+    /* Chat messages container */
+    .chat-messages {
+      flex: 1;
+      margin-top: 24px;
+      overflow-y: auto;
+      padding-right: 16px;
+      scrollbar-width: thin;
+      scrollbar-color: var(--accent-color) transparent;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .chat-messages::-webkit-scrollbar {
+      width: 8px;
+    }
+    .chat-messages::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .chat-messages::-webkit-scrollbar-thumb {
+      background-color: var(--accent-color);
+      border-radius: 10px;
+    }
+
+    /* Single message */
+    .message {
+      max-width: 75%;
+      padding: 14px 20px;
+      border-radius: var(--border-radius);
+      position: relative;
+      font-size: 1rem;
+      line-height: 1.4;
+      box-shadow: 0 1px 6px rgb(0 0 0 / 0.06);
+      transition: box-shadow 0.3s ease;
+      user-select: text;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .message:hover {
+      box-shadow: 0 4px 20px rgb(3 105 161 / 0.15);
+    }
+    /* User message */
+    .message.user {
+      background: var(--primary-color);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      border-bottom-left-radius: var(--border-radius);
+      border-top-right-radius: var(--border-radius);
+    }
+    /* AI message */
+    .message.ai {
+      background: #e0efff;
+      color: var(--primary-color);
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      border-bottom-right-radius: var(--border-radius);
+      border-top-left-radius: var(--border-radius);
+    }
+
+    /* Chat input form */
+    form.chat-input {
+      display: flex;
+      margin-top: 24px;
+      gap: 8px;
+      align-items: center;
+      border-top: 1px solid #dee3e8;
+      padding-top: 16px;
+    }
+    form.chat-input textarea {
+      flex-grow: 1;
+      resize: none;
+      border-radius: var(--border-radius);
+      border: 1.5px solid #cbd5e1;
+      font-family: inherit;
+      font-size: 1rem;
+      padding: 12px 16px;
+      min-height: 48px;
+      max-height: 120px;
+      line-height: 1.4;
+      transition: border-color var(--transition);
+    }
+    form.chat-input textarea:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 8px var(--accent-color);
+    }
+    form.chat-input button {
+      background-color: var(--accent-color);
+      border: none;
+      color: white;
+      font-size: 1.5rem;
+      padding: 12px 20px;
+      border-radius: var(--border-radius);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color var(--transition);
+      min-width: 48px;
+      height: 48px;
+    }
+    form.chat-input button:disabled {
+      background-color: #94a3b8;
+      cursor: not-allowed;
+    }
+    form.chat-input button:focus,
+    form.chat-input button:hover:not(:disabled) {
+      background-color: var(--primary-color);
+      outline-offset: 2px;
+    }
+
+    /* FOOTER */
+    footer.footer {
+      grid-area: footer;
+      height: 48px;
+      background: var(--glass-bg);
+      box-shadow: 0 -4px 20px var(--glass-shadow);
+      backdrop-filter: saturate(180%) blur(20px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      font-size: 0.875rem;
+      color: var(--font-color-light);
+      user-select: none;
+    }
+    footer.footer .status {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    footer.footer .status .material-icons {
+      font-size: 20px;
+      color: var(--accent-color);
+    }
+    footer.footer .social-links a {
+      color: var(--accent-color);
+      text-decoration: none;
+      font-size: 20px;
+      margin-left: 16px;
+      transition: color var(--transition);
+    }
+    footer.footer .social-links a:hover,
+    footer.footer .social-links a:focus {
+      color: var(--primary-color);
+      outline-offset: 2px;
+    }
+
+    /* Responsive layout */
+    @media (max-width: 1023px) {
+      .app-container {
+        grid-template-columns: 72px 1fr;
+      }
+      aside.sidebar {
+        min-width: 72px;
+        padding: 16px 8px 16px;
+      }
+      aside.sidebar .menu-title {
+        display: none;
+      }
+      aside.sidebar nav.menu a {
+        justify-content: center;
+        padding: 8px;
+      }
+      aside.sidebar nav.menu a .text-label {
+        display: none;
+      }
+    }
+    @media (max-width: 640px) {
+      .app-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: 64px 1fr 64px;
+        grid-template-areas:
+          "header"
+          "main"
+          "footer";
+      }
+      aside.sidebar {
+        position: fixed;
+        inset: 64px auto auto 0;
+        width: 280px;
+        height: calc(100vh - 64px);
+        background: var(--glass-bg);
+        backdrop-filter: saturate(180%) blur(20px);
+        box-shadow: 4px 0 10px var(--glass-shadow);
+        padding-top: 24px;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        z-index: 200;
+      }
+      aside.sidebar.open {
+        transform: translateX(0);
+      }
+      main.main-content {
+        margin: 0;
+        border-radius: 0;
+        padding: 16px 16px 0;
+      }
+      footer.footer {
+        height: 64px;
+        padding: 0 16px;
+      }
+    }
+
+    /* Scrollbar customization for desktop */
+    /* Firefox handled above */
+    @media (hover: hover) and (pointer: fine) {
+      main.main-content:hover, .chat-messages:hover {
+        scrollbar-width: thin;
+      }
+    }
+
+    /* Utility styles */
+    .sr-only {
+      position: absolute !important;
+      width: 1px !important;
+      height: 1px !important;
+      padding: 0 !important;
+      margin: -1px !important;
+      overflow: hidden !important;
+      clip: rect(0, 0, 0, 0) !important;
+      white-space: nowrap !important;
+      border: 0 !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app-container" role="application" aria-label="Ứng dụng Chat AI Y tế">
+    <header role="banner">
+      <a href="#" class="logo" aria-label="Trang chủ ứng dụng AI Y tế">
+        <span class="material-icons" aria-hidden="true">medication</span> AI Y tế
+      </a>
+      <nav aria-label="Thanh điều hướng chính">
+        <button id="btnToggleSidebar" aria-expanded="false" aria-controls="sidebar" aria-label="Mở / Đóng menu điều hướng">
+          <span class="material-icons">menu</span>
+        </button>
+        <button aria-label="Thông báo mới" id="btnNotifications" aria-haspopup="dialog">
+          <span class="material-icons" aria-hidden="true">notifications</span>
+        </button>
+      </nav>
+    </header>
+
+    <aside id="sidebar" class="sidebar" role="navigation" aria-label="Điều hướng chính">
+      <div class="menu-title">Menu</div>
+      <nav class="menu">
+        <a href="#" tabindex="0" aria-current="page">
+          <span class="material-icons" aria-hidden="true">home</span>
+          <span class="text-label">Trang chủ</span>
+        </a>
+        <a href="#" tabindex="0">
+          <span class="material-icons" aria-hidden="true">chat</span>
+          <span class="text-label">Trò chuyện</span>
+          <span class="badge" aria-label="3 tin nhắn chưa đọc">3</span>
+        </a>
+        <a href="#" tabindex="0">
+          <span class="material-icons" aria-hidden="true">history</span>
+          <span class="text-label">Lịch sử</span>
+        </a>
+        <a href="#" tabindex="0">
+          <span class="material-icons" aria-hidden="true">settings</span>
+          <span class="text-label">Cài đặt</span>
+        </a>
+      </nav>
+    </aside>
+
+    <main role="main" class="main-content" tabindex="0" aria-live="polite">
+      <section class="chat-header" aria-label="Tiêu đề khu vực trò chuyện">
+        <h2>Hỗ trợ AI Y tế</h2>
+        <button aria-label="Xóa cuộc trò chuyện hiện tại" id="btnClearChat" title="Xóa cuộc trò chuyện">
+          <span class="material-icons">delete_forever</span>
+        </button>
+      </section>
+
+      <section class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-relevant="additions">
+        <!-- Tin nhắn sẽ được chèn ở đây -->
+      </section>
+
+      <form class="chat-input" id="chatForm" aria-label="Biểu mẫu nhập tin nhắn AI">
+        <textarea id="chatInput" name="chatInput" placeholder="Nhập tin nhắn của bạn..." rows="1" aria-required="true" aria-label="Nơi nhập tin nhắn" autocomplete="off"></textarea>
+        <button type="submit" id="btnSend" aria-label="Gửi tin nhắn" disabled>
+          <span class="material-icons">send</span>
+        </button>
+      </form>
+    </main>
+
+    <footer class="footer" role="contentinfo">
+      <div class="status" aria-live="polite">
+        <span class="material-icons" aria-hidden="true">health_and_safety</span>
+        <span>Trang Web bảo mật và tuân thủ tiêu chuẩn Y tế</span>
+      </div>
+      <div class="social-links" aria-label="Liên kết mạng xã hội">
+        <a href="#" aria-label="Facebook"><span class="material-icons">facebook</span></a>
+        <a href="#" aria-label="Twitter"><span class="material-icons">twitter</span></a>
+        <a href="#" aria-label="LinkedIn"><span class="material-icons">linkedin</span></a>
+      </div>
+    </footer>
+  </div>
+
+  <script>
+  (() => {
+    // --- Lấy các phần tử trên trang ---
+    const sidebar = document.getElementById('sidebar');
+    const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+    const btnClearChat = document.getElementById('btnClearChat');
+    const chatForm = document.getElementById('chatForm');
+    const chatInput = document.getElementById('chatInput');
+    const chatMessages = document.getElementById('chatMessages');
+    const btnSend = document.getElementById('btnSend');
+
+    // --- Các hàm xử lý giao diện ---
+
+    // Hàm thêm một tin nhắn vào khung chat
+    function addMessage(text, sender = 'ai', elementId = null) {
+      const msg = document.createElement('div');
+      msg.className = `message ${sender}`;
+      // Thay thế ký tự xuống dòng bằng thẻ <br> để hiển thị đúng
+      msg.innerHTML = text.replace(/\n/g, '<br>');
+      if (elementId) {
+        msg.id = elementId;
+      }
+      chatMessages.appendChild(msg);
+      // Tự động cuộn xuống tin nhắn mới nhất
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return msg; // Trả về phần tử tin nhắn vừa tạo
+    }
+    
+    // Bật/tắt sidebar trên di động
+    btnToggleSidebar.addEventListener('click', () => {
+      const expanded = btnToggleSidebar.getAttribute('aria-expanded') === 'true';
+      btnToggleSidebar.setAttribute('aria-expanded', String(!expanded));
+      sidebar.classList.toggle('open');
+    });
+
+    // Kích hoạt nút gửi khi có chữ trong ô input
+    chatInput.addEventListener('input', () => {
+      btnSend.disabled = chatInput.value.trim().length === 0;
+      // Tự động điều chỉnh chiều cao ô input
+      chatInput.style.height = 'auto';
+      chatInput.style.height = chatInput.scrollHeight + 'px';
+    });
+    
+    // Cho phép gửi bằng phím Enter (và Shift + Enter để xuống dòng)
+    chatInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // Ngăn hành vi xuống dòng mặc định
+            chatForm.dispatchEvent(new Event('submit')); // Kích hoạt sự kiện submit
+        }
+    });
+
+    // --- Các hàm giao tiếp với Backend ---
+
+    // Xử lý khi người dùng gửi tin nhắn
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const message = chatInput.value.trim();
+      if (!message) return;
+
+      // Hiển thị tin nhắn của người dùng ngay lập tức
+      addMessage(message, 'user');
+
+      // Xóa ô input và vô hiệu hóa nút gửi
+      chatInput.value = '';
+      btnSend.disabled = true;
+      chatInput.style.height = 'auto';
+      chatInput.focus();
+
+      // Hiển thị tin nhắn "AI đang trả lời..."
+      const loadingMsg = addMessage('AI đang trả lời...', 'ai');
+      
+      try {
+        // Gửi tin nhắn đến server Flask tại endpoint '/chat'
+        const response = await fetch('http://127.0.0.1:5000/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ message: message }), // Gửi đi dưới dạng JSON
+        });
+
+        // Nếu server không trả về kết quả thành công (ví dụ: lỗi 500)
+        if (!response.ok) {
+            throw new Error(`Lỗi từ server: ${response.statusText}`);
+        }
+
+        // Đọc dữ liệu JSON từ phản hồi của server
+        const data = await response.json();
+        
+        // Cập nhật tin nhắn "loading" bằng câu trả lời thật của AI
+        loadingMsg.innerHTML = data.response.replace(/\n/g, '<br>');
+
+      } catch (error) {
+        // Nếu có lỗi mạng hoặc lỗi từ server, hiển thị thông báo lỗi
+        console.error("Lỗi khi gọi API:", error);
+        loadingMsg.textContent = 'Rất tiếc, đã có lỗi xảy ra. Vui lòng thử lại sau.';
+        loadingMsg.style.color = 'red';
+      }
+    });
+
+    // Xử lý khi nhấn nút xóa cuộc trò chuyện
+    btnClearChat.addEventListener('click', async () => {
+        try {
+            await fetch('http://127.0.0.1:5000/clear', { method: 'POST' });
+            chatMessages.innerHTML = '';
+            addMessage('Xin chào! Tôi có thể giúp gì cho bạn?', 'ai');
+            chatInput.focus();
+        } catch (error) {
+            console.error("Lỗi khi xóa cuộc trò chuyện:", error);
+            alert("Không thể xóa cuộc trò chuyện. Vui lòng kiểm tra lại kết nối tới server.");
+        }
+    });
+
+    // Thêm tin nhắn chào mừng ban đầu
+    addMessage('Xin chào! Tôi có thể giúp gì cho bạn về y tế hôm nay?', 'ai');
+  })();
+</script>
+</body>
+</html>
+
