@@ -21,7 +21,7 @@ import gunicorn
 API_KEY = os.getenv("GOOGLE_API_KEY")
 try:
     genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+    model = genai.GenerativeModel('gemini-2.0-flash')
     chat = model.start_chat(history=[])
 except Exception as e:
     print(f"Lỗi khi cấu hình Gemini: {e}")
