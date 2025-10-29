@@ -486,7 +486,7 @@
       </nav>
     </header>
 
-    <aside id="sidebar" class="sidebar" role="navigation" aria-label="Điều hướng chính">
+         <aside id="sidebar" class="sidebar" role="navigation" aria-label="Điều hướng chính">
       <div class="menu-title">Menu</div>
       <nav class="menu">
         <a href="#" tabindex="0" aria-current="page">
@@ -496,7 +496,6 @@
         <a href="#" tabindex="0">
           <span class="material-icons" aria-hidden="true">chat</span>
           <span class="text-label">Trò chuyện</span>
-          <span class="badge" aria-label="3 tin nhắn chưa đọc">3</span>
         </a>
         <a href="#" tabindex="0">
           <span class="material-icons" aria-hidden="true">history</span>
@@ -506,144 +505,194 @@
           <span class="material-icons" aria-hidden="true">settings</span>
           <span class="text-label">Cài đặt</span>
         </a>
+        <!-- Mục menu mới: Nhận Diện biển báo -->
+        <a href="#" id="detectSignMenu" tabindex="0">
+          <span class="material-icons" aria-hidden="true">visibility</span>
+          <span class="text-label">Nhận Diện biển báo</span>
+        </a>
+        </a>
+        <a href="#" id="sleepDetectionMenu" tabindex="0">
+          <span class="material-icons" aria-hidden="true">visibility</span>
+          <span class="text-label">Nhận diện ngủ gật</span>
       </nav>
     </aside>
 
-    <main role="main" class="main-content" tabindex="0" aria-live="polite">
-      <section class="chat-header" aria-label="Tiêu đề khu vực trò chuyện">
-        <h2>Hỗ trợ AI Y tế</h2>
-        <button aria-label="Xóa cuộc trò chuyện hiện tại" id="btnClearChat" title="Xóa cuộc trò chuyện">
-          <span class="material-icons">delete_forever</span>
+    <main class="main-content" role="main" aria-label="Nội dung chính">
+      <!-- Chat section (hiển thị mặc định) -->
+      <section class="chat-header">
+        <h2>Trò chuyện với AI Y tế</h2>
+        <button aria-label="Xóa lịch sử trò chuyện" id="btnClearChat">
+          <span class="material-icons" aria-hidden="true">delete</span>
         </button>
       </section>
-
-      <section class="chat-messages" id="chatMessages" role="log" aria-live="polite" aria-relevant="additions">
-        <!-- Tin nhắn sẽ được chèn ở đây -->
+      <section class="chat-messages" id="chatMessages" aria-live="polite" aria-label="Lịch sử tin nhắn">
+        <!-- Tin nhắn sẽ được thêm động -->
       </section>
-
-      <form class="chat-input" id="chatForm" aria-label="Biểu mẫu nhập tin nhắn AI">
-        <textarea id="chatInput" name="chatInput" placeholder="Nhập tin nhắn của bạn..." rows="1" aria-required="true" aria-label="Nơi nhập tin nhắn" autocomplete="off"></textarea>
-        <button type="submit" id="btnSend" aria-label="Gửi tin nhắn" disabled>
-          <span class="material-icons">send</span>
+      <form class="chat-input" id="chatForm">
+        <textarea id="userInput" placeholder="Nhập tin nhắn của bạn..." aria-label="Nhập tin nhắn"></textarea>
+        <button type="submit" id="sendBtn" aria-label="Gửi tin nhắn">
+          <span class="material-icons" aria-hidden="true">send</span>
         </button>
       </form>
+
+      <!-- Section detect-sign (ẩn mặc định) -->
+      <section id="detectSignSection" class="detect-sign-section" style="display: none;" aria-label="Khu vực nhận diện biển báo">
+        <div class="detect-header">
+          <h2>Nhận Diện Biển Báo Giao Thông</h2>
+          <p>Upload hình ảnh biển báo để AI phân tích và nhận diện.</p>
+        </div>
+        <form id="detectForm" enctype="multipart/form-data">
+          <input type="file" id="fileInput" accept="image/*" required aria-label="Chọn file hình ảnh">
+          <button type="submit" id="detectBtn">Nhận Diện</button>
+        </form>
+        <div id="detectResult" class="detect-result" style="display: none;">
+          <h3>Kết Quả Nhận Diện:</h3>
+          <p id="resultText"></p>
+          <button id="downloadBtn">Tải Xuống Kết Quả</button>
+        </div>
+      </section>
     </main>
 
     <footer class="footer" role="contentinfo">
-      <div class="status" aria-live="polite">
-        <span class="material-icons" aria-hidden="true">health_and_safety</span>
-        <span>Trang Web bảo mật và tuân thủ tiêu chuẩn Y tế</span>
+      <div class="status">
+        <span class="material-icons" aria-hidden="true">circle</span>
+        <span>Trực tuyến</span>
       </div>
-      <div class="social-links" aria-label="Liên kết mạng xã hội">
-        <a href="#" aria-label="Facebook"><span class="material-icons">facebook</span></a>
-        <a href="#" aria-label="Twitter"><span class="material-icons">twitter</span></a>
-        <a href="#" aria-label="LinkedIn"><span class="material-icons">linkedin</span></a>
+      <div class="social-links">
+        <a href="#" aria-label="Liên kết Facebook">
+          <span class="material-icons" aria-hidden="true">facebook</span>
+        </a>
+        <a href="#" aria-label="Liên kết Twitter">
+          <span class="material-icons" aria-hidden="true">twitter</span>
+        </a>
+        <a href="#" aria-label="Liên kết LinkedIn">
+          <span class="material-icons" aria-hidden="true">linkedin</span>
+        </a>
       </div>
     </footer>
   </div>
 
- <script>
-  (() => {
-    // --- Lấy các phần tử trên trang ---
-    const btnClearChat = document.getElementById('btnClearChat');
-    const chatForm = document.getElementById('chatForm');
-    const chatInput = document.getElementById('chatInput');
+  <script>
+    // Biến toàn cục
     const chatMessages = document.getElementById('chatMessages');
-    const btnSend = document.getElementById('btnSend');
+    const userInput = document.getElementById('userInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const chatForm = document.getElementById('chatForm');
+    const btnClearChat = document.getElementById('btnClearChat');
+    const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+    const sidebar = document.getElementById('sidebar');
+    const detectSignMenu = document.getElementById('detectSignMenu');
+    const detectSignSection = document.getElementById('detectSignSection');
+    const chatSection = document.querySelector('.chat-header').parentElement; // Main content
+    const detectForm = document.getElementById('detectForm');
+    const detectResult = document.getElementById('detectResult');
+    const resultText = document.getElementById('resultText');
+    const downloadBtn = document.getElementById('downloadBtn');
 
-    // BIẾN QUAN TRỌNG: Lưu trữ lịch sử chat phía client
-    // Định dạng phải tuân theo API của Gemini
     let chatHistory = [];
 
-    // --- Các hàm xử lý giao diện ---
-
-    function addMessageToUI(text, sender) {
-      const msg = document.createElement('div');
-      msg.className = `message ${sender}`;
-      msg.innerHTML = text.replace(/\n/g, '<br>');
-      chatMessages.appendChild(msg);
+    // Hàm thêm tin nhắn
+    function addMessage(content, type) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      messageDiv.textContent = content;
+      chatMessages.appendChild(messageDiv);
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
-    
-    // Bật/tắt nút gửi và điều chỉnh chiều cao ô input (không đổi)
-    chatInput.addEventListener('input', () => {
-      btnSend.disabled = chatInput.value.trim().length === 0;
-      chatInput.style.height = 'auto';
-      chatInput.style.height = chatInput.scrollHeight + 'px';
-    });
-    chatInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            chatForm.dispatchEvent(new Event('submit'));
-        }
-    });
 
-    // --- Các hàm giao tiếp với Backend (THAY ĐỔI LỚN) ---
-
+    // Xử lý gửi tin nhắn chat
     chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
-      const messageText = chatInput.value.trim();
-      if (!messageText) return;
+      const message = userInput.value.trim();
+      if (!message) return;
 
-      // 1. Thêm tin nhắn của người dùng vào giao diện và lịch sử
-      addMessageToUI(messageText, 'user');
-      chatHistory.push({ role: 'user', parts: [{ text: messageText }] });
+      addMessage(message, 'user');
+      userInput.value = '';
+      sendBtn.disabled = true;
 
-      // Xóa ô input
-      const currentUserInput = chatInput.value; // Lưu lại để gửi đi
-      chatInput.value = '';
-      btnSend.disabled = true;
-      chatInput.style.height = 'auto';
-      chatInput.focus();
-
-      // Hiển thị tin nhắn "loading"
-      const loadingMsg = addMessageToUI('AI đang trả lời...', 'ai');
-      
       try {
-        // 2. Gửi tin nhắn MỚI và TOÀN BỘ LỊCH SỬ lên server
-        const response = await fetch('/chat', { // Bỏ http://127.0.0.1:5000 để chạy được trên Render
+        const response = await fetch('/chat', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-              message: currentUserInput, 
-              history: chatHistory.slice(0, -1) // Gửi lịch sử KHÔNG bao gồm tin nhắn cuối cùng
-          }),
+          body: JSON.stringify({ message, history: chatHistory })
         });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.error || `Lỗi từ server: ${response.statusText}`);
-        }
-
         const data = await response.json();
-        
-        // 3. Cập nhật giao diện với câu trả lời của AI
-        loadingMsg.innerHTML = data.response.replace(/\n/g, '<br>');
-
-        // 4. Thêm câu trả lời của AI vào lịch sử để dùng cho lần hỏi tiếp theo
-        chatHistory.push({ role: 'model', parts: [{ text: data.response }] });
-
+        if (response.ok) {
+          addMessage(data.response, 'ai');
+          chatHistory.push({ role: 'user', parts: [{ text: message }] });
+          chatHistory.push({ role: 'model', parts: [{ text: data.response }] });
+        } else {
+          addMessage('Lỗi: ' + data.error, 'ai');
+        }
       } catch (error) {
-        console.error("Lỗi khi gọi API:", error);
-        loadingMsg.innerHTML = 'Rất tiếc, đã có lỗi xảy ra. Vui lòng thử lại sau.';
-        loadingMsg.style.color = 'red';
-        // Nếu lỗi, xóa tin nhắn cuối cùng của người dùng khỏi lịch sử
-        chatHistory.pop();
+        addMessage('Lỗi kết nối: ' + error.message, 'ai');
+      } finally {
+        sendBtn.disabled = false;
       }
     });
 
-    // Xử lý khi nhấn nút xóa cuộc trò chuyện
+    // Xóa lịch sử chat
     btnClearChat.addEventListener('click', () => {
-        chatMessages.innerHTML = '';
-        chatHistory = []; // Chỉ cần xóa lịch sử ở client
-        addMessageToUI('Xin chào! Tôi có thể giúp gì cho bạn về y tế hôm nay?', 'ai');
-        chatInput.focus();
+      chatMessages.innerHTML = '';
+      chatHistory = [];
     });
 
-    // Thêm tin nhắn chào mừng ban đầu
-    addMessageToUI('Xin chào! Tôi có thể giúp gì cho bạn về y tế hôm nay?', 'ai');
-  })();
-</script>
+    // Toggle sidebar
+    btnToggleSidebar.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+      btnToggleSidebar.setAttribute('aria-expanded', sidebar.classList.contains('open'));
+    });
+
+    // Toggle hiển thị detect-sign khi nhấn menu
+    detectSignMenu.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Ẩn chat, hiện detect
+      document.querySelector('.chat-header').style.display = 'none';
+      document.querySelector('.chat-messages').style.display = 'none';
+      document.querySelector('.chat-input').style.display = 'none';
+      detectSignSection.style.display = 'block';
+    });
+
+    // Xử lý form upload detect-sign
+    detectForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append('file', document.getElementById('fileInput').files[0]);
+      
+      try {
+        const response = await fetch('/detect-sign', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await response.json();
+        if (response.ok) {
+          resultText.textContent = data.result;
+          detectResult.style.display = 'block';
+        } else {
+          alert(data.error);
+        }
+      } catch (error) {
+        alert('Lỗi khi upload: ' + error.message);
+      }
+    });
+
+    // Tải xuống kết quả detect-sign
+    downloadBtn.addEventListener('click', () => {
+      const blob = new Blob([resultText.textContent], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'ket_qua_nhan_dien.txt';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    // Auto-resize textarea
+    userInput.addEventListener('input', () => {
+      userInput.style.height = 'auto';
+      userInput.style.height = userInput.scrollHeight + 'px';
+    });
+  </script>
 </body>
 </html>
 
