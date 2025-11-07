@@ -29,39 +29,72 @@ except Exception as e:
     print(f"Lỗi khi cấu hình Gemini: {e}")
     model = None 
 
-# Load model YOLOv8n cho nhận diện biển báo
+# Load model YOLOv8 cho nhận diện biển báo
 yolo_model = None
+model_path = 'models/best.pt'
+
 try:
-    yolo_model = YOLO('models/best.pt')  # Thay bằng đường dẫn thực tế model YOLOv8n, ví dụ: './models/yolov8n.pt'
-    print("Model YOLOv8n loaded successfully.")
+    if os.path.exists(model_path):
+        yolo_model = YOLO(model_path)
+        print(f"✓ Model YOLOv8 loaded successfully from {model_path}")
+    else:
+        print(f"⚠ Model file not found at {model_path}")
+        print("  Attempting to use pretrained YOLOv8n model...")
+        yolo_model = YOLO('yolov8n.pt')  # Fallback to pretrained model
+        print("✓ Pretrained YOLOv8n model loaded successfully")
 except Exception as e:
-    print(f"Lỗi khi load model YOLOv8n: {e}")
+    print(f"✗ Error loading YOLO model: {e}")
+    print("  Traffic sign detection will not be available")
     yolo_model = None
 
-# Hàm nhận diện biển báo với YOLOv8n
+# Hàm nhận diện biển báo với YOLOv8
 def detect_sign(image_path):
     if not yolo_model:
-        return "Lỗi: Model YOLOv8n chưa được load."
+        return "Lỗi: Model YOLOv8 chưa được load. Vui lòng kiểm tra file model tại thư mục 'models/'."
     
     try:
-        # Chạy prediction với YOLOv8n (nano version, nhanh hơn)
-        results = yolo_model.predict(source=image_path, conf=0.5, save=False)  # conf=0.5 để lọc confidence thấp
+        # Chạy prediction với YOLOv8
+        results = yolo_model.predict(
+            source=image_path, 
+            conf=0.25,  # Confidence threshold
+            iou=0.45,   # IoU threshold for NMS
+            save=False,
+            verbose=False
+        )
         
         detections = []
         for result in results:
+            if len(result.boxes) == 0:
+                continue
+                
             for box in result.boxes:
                 class_id = int(box.cls.item())
                 confidence = box.conf.item()
-                class_name = result.names[class_id]  # Giả định model có class names cho biển báo
-                detections.append(f"{class_name} (Confidence: {confidence:.2f})")
+                class_name = result.names[class_id]
+                
+                # Lấy tọa độ bounding box
+                x1, y1, x2, y2 = box.xyxy[0].tolist()
+                
+                detections.append({
+                    'class': class_name,
+                    'confidence': confidence,
+                    'bbox': [x1, y1, x2, y2]
+                })
         
         if not detections:
-            return "Không nhận diện được biển báo nào trong hình ảnh."
+            return "❌ Không nhận diện được biển báo nào trong hình ảnh.\n\nGợi ý:\n- Đảm bảo hình ảnh có chứa biển báo giao thông\n- Biển báo cần rõ ràng và không bị che khuất\n- Thử với hình ảnh có độ phân giải tốt hơn"
         
-        result_text = "Nhận diện biển báo:\n" + "\n".join(detections)
-        return result_text
+        # Format kết quả đẹp hơn
+        result_text = f"✓ Đã nhận diện được {len(detections)} biển báo:\n\n"
+        for i, det in enumerate(detections, 1):
+            result_text += f"{i}. {det['class']}\n"
+            result_text += f"   Độ tin cậy: {det['confidence']*100:.1f}%\n"
+            result_text += f"   Vị trí: ({int(det['bbox'][0])}, {int(det['bbox'][1])}) → ({int(det['bbox'][2])}, {int(det['bbox'][3])})\n\n"
+        
+        return result_text.strip()
+        
     except Exception as e:
-        return f"Lỗi khi xử lý với YOLOv8n: {str(e)}"
+        return f"❌ Lỗi khi xử lý hình ảnh: {str(e)}\n\nVui lòng thử lại với hình ảnh khác."
 
 # Hàm kiểm tra file cho phép
 def allowed_file(filename):
@@ -114,7 +147,8 @@ def detect_sign_route():
             os.remove(filepath)  # Xóa file sau xử lý
             return jsonify({"result": result})
         except Exception as e:
-            os.remove(filepath)
+            if os.path.exists(filepath):
+                os.remove(filepath)
             return jsonify({"error": f"Lỗi khi xử lý hình ảnh: {str(e)}"}), 500
     else:
         return jsonify({"error": "Định dạng file không được hỗ trợ. Chỉ chấp nhận PNG, JPG, JPEG."}), 400
