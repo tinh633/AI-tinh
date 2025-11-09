@@ -1,0 +1,50 @@
+names:
+- Cấm dừng và đỗ 
+- Cấm người đi bộ 
+- Cấm đỗ 
+- Đi chậm 
+- Giao nhau với đường không ưu tiên 
+- Giao với đường ưu tiên 
+- Hiệu lệnh 
+- Cấm đi ngược chiều 
+- Cảnh báo có người đi bộ 
+- Cảnh báo có trẻ em 
+- Cấm rẽ phải 
+- Cấm rẽ trái  
+- Cấm oto 
+- Cấm oto rẽ trái 
+- Cấm oto rẽ phải 
+- Cấm oto quay đầu 
+- Cấm oto rẽ trái và quay đầu 
+- Đường ưu tiên 
+- Hết đường ưu tiên  
+- Cấm quay đầu 
+- Cấm xe 3 bánh và 4 bánh thô sơ 
+- Đường nguy hiểm vòng bên phải
+- Đường nguy hiểm vòng bên trái
+- Đường nhiều ngoặt vòng bên phải
+- Đường nhiều ngoặt vòng bên trái
+- Cấm xe tải 
+- Giao với đường cùng cấp 
+- Giới hạn tốc độ 40km/h
+- Giới hạn tốc độ 50km/h
+- Giới hạn tốc độ 60km/h
+- Giới hạn tốc độ 30km/h
+- Giới hạn tốc độ 80km/h
+- Cấm xe máy
+- Nguy hiểm có gờ giảm tốc
+- Cấm xe 2 và 3 bánh
+- Cấm rẽ trái và quay đầu
+- Cấm đỗ ngày lẻ
+- Cấm đỗ ngày chẵn
+- Cấm đi thẳng
+- Cấm xe xích lô
+- Cấm xe tải và xe khách
+- Giao với đường sắt
+- Cấm xe container
+nc: 43
+path: TRAFFIC_SIGNS/dataset
+test: TRAFFIC_SIGNS/dataset/test/images
+train:
+- TRAFFIC_SIGNS/dataset/train/images
+val: TRAFFIC_SIGNS/dataset/val/images

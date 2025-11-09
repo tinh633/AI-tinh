@@ -1,0 +1,5 @@
+path: /home/gess/Documents/sub/TrainModel/YOLO_Dataset
+train: images/train
+val: images/val
+nc: 2
+names: ['open_eye', 'closed_eye']
