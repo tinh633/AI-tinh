@@ -4,7 +4,7 @@ import yaml
 import logging
 import numpy as np  # Cần cho xử lý ảnh
 import time
-import re # <-- NEW: Cần cho việc xóa dấu
+import re # xóa ảnh dấu
 from pathlib import Path
 from flask import send_from_directory
 import google.generativeai as genai
@@ -268,7 +268,7 @@ def handle_chat():
     except Exception as e:
         logging.exception("Lỗi handle_chat:")
         return jsonify({"error": "Đã có lỗi phía server."}), 500
-
+#... toàn bộ logic của handle_chat.
 @app.route('/detect-sign', methods=['POST'])
 def detect_sign_route():
     if 'file' not in request.files:
