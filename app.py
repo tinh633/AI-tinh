@@ -68,8 +68,8 @@ except Exception as e:
     model = None
 
 # --- Paths for YOLO model (TRAFFIC SIGN) & dataset.yaml ---
-MODEL_PATH = Path("C:/Users/hovan/OneDrive/Desktop/AII/TRAFFIC_SIGNS/TRAFFIC_SIGNS/runs_yolo/yolov13_custom_train2/weights/best.pt")
-DATASET_YAML = Path("C:/Users/hovan/OneDrive/Desktop/AII/TRAFFIC_SIGNS/TRAFFIC_SIGNS/dataset/dataset.yaml")
+MODEL_PATH = Path("C:/Users/hovan/OneDrive/Desktop/AII/TRAFFIC_SIGNS/runs_yolo/yolov13_custom_train2/weights/best.pt")
+DATASET_YAML = Path("C:/Users/hovan/OneDrive/Desktop/AII/TRAFFIC_SIGNS/dataset/dataset.yaml")
 
 # --- Load class names from dataset.yaml ---
 CLASS_NAMES = []
@@ -106,8 +106,8 @@ except Exception as e:
     yolo_model = None
 
 # --- NEW: Tải model NHẬN DIỆN KHUÔN MẶT (Tiền xử lý) ---
-PROTOTXT_PATH = Path("C:/Users/hovan/OneDrive/Desktop/AII/TrainModel/TrainModel/models/deploy.prototxt.txt")
-CAFFEMODEL_PATH = Path("C:/Users/hovan/OneDrive/Desktop/AII/TrainModel/TrainModel/models/res10_300x300_ssd_iter_140000.caffemodel")
+PROTOTXT_PATH = Path("C:/Users/hovan/OneDrive/Desktop/AII/TrainModel/models/deploy.prototxt.txt")
+CAFFEMODEL_PATH = Path("C:/Users/hovan/OneDrive/Desktop/AII/TrainModel/models/res10_300x300_ssd_iter_140000.caffemodel")
 try:
     if PROTOTXT_PATH.exists() and CAFFEMODEL_PATH.exists():
         face_net = cv2.dnn.readNetFromCaffe(str(PROTOTXT_PATH), str(CAFFEMODEL_PATH))
@@ -120,8 +120,8 @@ except Exception as e:
     logging.error(f"Lỗi khi load Face Detector: {e}")
 
 # --- NEW: Tải model YOLOv8 NGỦ GẬT (Model chính của bạn) ---
-SLEEP_MODEL_PATH = Path("C:/Users/hovan/OneDrive/Desktop/AII/TrainModel/TrainModel/models/best_drowsy.pt") 
-SLEEP_CLASSES_PATH = Path("C:/Users/hovan/OneDrive/Desktop/AII/TrainModel/TrainModel/YOLO_Dataset/data.yaml") 
+SLEEP_MODEL_PATH = Path("C:/Users/hovan/OneDrive/Desktop/AII/TrainModel/models/best_drowsy.pt") 
+SLEEP_CLASSES_PATH = Path("C:/Users/hovan/OneDrive/Desktop/AII/TrainModel/YOLO_Dataset/data.yaml") 
 try:
     if SLEEP_MODEL_PATH.exists():
         sleep_model = YOLO(str(SLEEP_MODEL_PATH))

@@ -1,0 +1,13 @@
+
+path: /content/training_data
+train: images/train
+val: images/val
+
+nc: 3
+names: ['open_eye', 'closed_eye', 'face']
+
+# Download command (uncomment to use)
+# from roboflow import Roboflow
+# rf = Roboflow(api_key="YOUR_API_KEY")
+# project = rf.workspace("community").project("driver-drowsiness-detection")
+# dataset = project.version(1).download("yolov8")
