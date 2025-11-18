@@ -1,0 +1,22 @@
+{
+  "schema_version": "v1",
+  "name_for_human": "Traffic Law MCP",
+  "name_for_model": "traffic_law_mcp",
+  "description_for_human": "MCP tool cho phép AI truy cập website luật giao thông Việt Nam.",
+  "description_for_model": "Cung cấp công cụ HTTP, Browser và LuatLookup để lấy dữ liệu luật giao thông từ web.",
+  
+  "mcp_servers": {
+    "http": {
+      "url": "http://127.0.0.1:8000"
+    }
+  },
+
+  "api": {
+    "type": "openapi",
+    "url": "/openapi.json"
+  },
+
+  "auth": {
+    "type": "none"
+  }
+}

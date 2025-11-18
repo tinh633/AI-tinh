@@ -3,30 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Ứng dụng Chat AI </title>
+  <title>Ứng dụng Chat AI - Voice Mode</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Material+Icons" rel="stylesheet" />
   <style>
-    /* Reset & base */
-    *, *::before, *::after {
-      box-sizing: border-box;
-    }
-    html {
-      font-family: 'Inter', sans-serif;
-      font-size: 16px;
-      scroll-behavior: smooth;
-    }
-    body {
-      margin: 0;
-      background: #f4f9fc;
-      color: #0a2540;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      overflow-x: hidden;
-    }
-    /* Glass morphism variables */
+    /* CSS */
     :root {
       --glass-bg: rgba(255 255 255 / 0.65);
       --glass-shadow: rgba(10, 37, 64, 0.15);
@@ -40,753 +20,150 @@
       --border-radius: 12px;
       --transition: 0.3s cubic-bezier(0.22, 1, 0.36, 1);
     }
-    /* Layout grid */
-    .app-container {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      grid-template-rows: 64px 1fr 48px;
-      grid-template-areas:
-        "header header"
-        "sidebar main"
-        "footer footer";
-      height: 100vh;
-      overflow: hidden;
-      background: #e7f0fa;
+    *, *::before, *::after { box-sizing: border-box; }
+    html { font-family: 'Inter', sans-serif; font-size: 16px; scroll-behavior: smooth; }
+    body { margin: 0; background: #f4f9fc; color: #0a2540; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
+    .app-container { display: grid; grid-template-columns: 280px 1fr; grid-template-rows: 64px 1fr 48px; grid-template-areas: "header header" "sidebar main" "footer footer"; height: 100vh; overflow: hidden; background: #e7f0fa; }
+    header { grid-area: header; height: 64px; backdrop-filter: saturate(180%) blur(20px); background: var(--glass-bg); box-shadow: 0 4px 30px var(--glass-shadow); display: flex; align-items: center; padding: 0 24px; position: sticky; top: 0; z-index: 100; user-select: none; }
+    header .logo { font-weight: 700; font-size: clamp(1.25rem, 1vw + 0.5rem, 1.5rem); color: var(--primary-color); letter-spacing: 0.05em; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+    header .logo .material-icons { font-size: 32px; color: var(--accent-color); }
+    header nav { margin-left: auto; display: flex; gap: 24px; align-items: center; }
+    header nav button { background: transparent; border: none; cursor: pointer; color: var(--font-color-light); font-size: 20px; padding: 8px; border-radius: var(--border-radius); transition: background-color var(--transition); display: flex; align-items: center; justify-content: center; }
+    header nav button:focus, header nav button:hover { background-color: var(--accent-color); color: white; }
+    aside.sidebar { grid-area: sidebar; background: var(--glass-bg); box-shadow: 4px 0 10px var(--glass-shadow); backdrop-filter: saturate(180%) blur(20px); padding: 24px 16px 16px; display: flex; flex-direction: column; gap: 24px; overflow-y: auto; scrollbar-width: thin; user-select: none; min-width: 280px; }
+    aside.sidebar::-webkit-scrollbar { width: 8px; }
+    aside.sidebar::-webkit-scrollbar-thumb { background-color: var(--accent-color); border-radius: 10px; }
+    aside.sidebar .menu-title { font-weight: 600; color: var(--primary-color); letter-spacing: 0.05em; font-size: 0.875rem; text-transform: uppercase; padding-left: 8px; margin-bottom: 8px; }
+    aside.sidebar nav.menu { display: flex; flex-direction: column; gap: 16px; }
+    aside.sidebar nav.menu a { color: var(--font-color-light); text-decoration: none; font-weight: 500; font-size: 1rem; display: flex; align-items: center; gap: 16px; padding: 10px 12px; border-radius: var(--border-radius); transition: background-color var(--transition), color var(--transition); position: relative; }
+    aside.sidebar nav.menu a .material-icons { font-size: 24px; color: var(--accent-color); flex-shrink: 0; }
+    aside.sidebar nav.menu a:hover, aside.sidebar nav.menu a:focus { background-color: var(--accent-color); color: white; outline: none; }
+    aside.sidebar nav.menu a:hover .material-icons, aside.sidebar nav.menu a:focus .material-icons { color: white; }
+    aside.sidebar nav.menu a .badge { font-size: 0.7rem; background: var(--error-color); color: white; min-width: 20px; height: 20px; border-radius: 9999px; display: flex; align-items: center; justify-content: center; position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-weight: 700; }
+    main.main-content { grid-area: main; background: white; display: flex; flex-direction: column; padding: 24px 32px; min-height: calc(100vh - 64px); overflow: hidden; box-shadow: 0 0 32px rgb(3 105 161 / 0.1); border-radius: var(--border-radius); margin: 16px; }
+    main.main-content .chat-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #dee3e8; user-select: none; }
+    main.main-content .chat-header h2 { font-weight: 700; color: var(--primary-color); margin: 0; font-size: clamp(1.25rem, 1vw + 0.25rem, 1.5rem); }
+    main.main-content .chat-header button { background: none; border: none; color: var(--accent-color); cursor: pointer; font-size: 28px; border-radius: var(--border-radius); padding: 6px; transition: background-color var(--transition); }
+    main.main-content .chat-header button:focus, main.main-content .chat-header button:hover { background-color: var(--accent-color); color: white; }
+    .chat-messages { flex: 1; margin-top: 24px; overflow-y: auto; padding-right: 16px; scrollbar-width: thin; display: flex; flex-direction: column; gap: 16px; }
+    .chat-messages::-webkit-scrollbar { width: 8px; }
+    .chat-messages::-webkit-scrollbar-thumb { background-color: var(--accent-color); border-radius: 10px; }
+    .message { max-width: 75%; padding: 14px 20px; border-radius: var(--border-radius); position: relative; font-size: 1rem; line-height: 1.4; box-shadow: 0 1px 6px rgb(0 0 0 / 0.06); transition: box-shadow 0.3s ease; user-select: text; white-space: pre-wrap; word-wrap: break-word; }
+    .message:hover { box-shadow: 0 4px 20px rgb(3 105 161 / 0.15); }
+    .message.user { background: var(--primary-color); color: white; align-self: flex-end; border-bottom-right-radius: 4px; }
+    .message.user img { max-width: 200px; border-radius: 8px; margin-top: 8px; border: 2px solid white; }
+    .message.ai { background: #e0efff; color: var(--primary-color); align-self: flex-start; border-bottom-left-radius: 4px; }
+    #detectResult img, #sleepDetectResult img { display: block; margin: 10px auto; max-height: 500px; box-shadow: 0 0 8px rgba(0,0,0,0.2); }
+    .message.ai details { margin-top: 15px; background: #f0f9ff; padding: 10px; border-radius: 8px; border: 1px solid #cce7ff; }
+    .message.ai details summary { cursor: pointer; font-weight: 500; color: var(--primary-color); }
+    .message.ai details div { padding-top: 10px; border-top: 1px solid #cce7ff; margin-top: 8px; font-size: 0.9rem; color: #334155; }
+    .message.ai details div p { margin: 4px 0; }
+    .message.ai > p { font-size: 1.05rem; line-height: 1.6; margin: 0; }
+    form.chat-input { display: flex; margin-top: 24px; gap: 8px; align-items: center; border-top: 1px solid #dee3e8; padding-top: 16px; }
+    form.chat-input textarea { flex-grow: 1; resize: none; border-radius: var(--border-radius); border: 1.5px solid #cbd5e1; font-family: inherit; font-size: 1rem; padding: 12px 16px; min-height: 48px; max-height: 120px; line-height: 1.4; transition: border-color var(--transition); }
+    form.chat-input textarea:focus { outline: none; border-color: var(--accent-color); box-shadow: 0 0 8px var(--accent-color); }
+    form.chat-input select { background-color: white; border: 1.5px solid #cbd5e1; border-radius: var(--border-radius); padding: 0 12px; height: 48px; font-family: inherit; font-size: 0.9rem; font-weight: 500; color: var(--font-color); transition: border-color var(--transition); cursor: pointer; background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+    form.chat-input select:focus { outline: none; border-color: var(--accent-color); }
+    form.chat-input select optgroup { font-weight: bold; color: #334155; background: #f1f5f9; }
+    form.chat-input button { background-color: var(--accent-color); border: none; color: white; font-size: 1.5rem; padding: 12px 20px; border-radius: var(--border-radius); cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background-color var(--transition); min-width: 48px; height: 48px; }
+    form.chat-input button:disabled { background-color: #94a3b8; cursor: not-allowed; }
+    form.chat-input button:focus, form.chat-input button:hover:not(:disabled) { background-color: var(--primary-color); }
+    footer.footer { grid-area: footer; height: 48px; background: var(--glass-bg); box-shadow: 0 -4px 20px var(--glass-shadow); backdrop-filter: saturate(180%) blur(20px); display: flex; align-items: center; justify-content: space-between; padding: 0 24px; font-size: 0.875rem; color: var(--font-color-light); user-select: none; }
+    footer.footer .status { display: flex; align-items: center; gap: 12px; }
+    footer.footer .status .material-icons { font-size: 20px; color: var(--accent-color); }
+    footer.footer .social-links a { color: var(--accent-color); text-decoration: none; font-size: 20px; margin-left: 16px; transition: color var(--transition); }
+    footer.footer .social-links a:hover, footer.footer .social-links a:focus { color: var(--primary-color); }
+    @media (max-width: 1023px) {
+      .app-container { grid-template-columns: 72px 1fr; }
+      aside.sidebar { min-width: 72px; padding: 16px 8px 16px; }
+      aside.sidebar .menu-title { display: none; }
+      aside.sidebar nav.menu a { justify-content: center; padding: 8px; }
+      aside.sidebar nav.menu a .text-label { display: none; }
     }
-    /* HEADER */
-    header {
-      grid-area: header;
-      height: 64px;
-      backdrop-filter: saturate(180%) blur(20px);
-      background: var(--glass-bg);
-      box-shadow: 0 4px 30px var(--glass-shadow);
-      display: flex;
-      align-items: center;
-      padding: 0 24px;
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      user-select: none;
+    @media (max-width: 640px) {
+      .app-container { grid-template-columns: 1fr; grid-template-rows: 64px 1fr 64px; grid-template-areas: "header" "main" "footer"; }
+      aside.sidebar { position: fixed; inset: 64px auto auto 0; width: 280px; height: calc(100vh - 64px); background: var(--glass-bg); backdrop-filter: saturate(180%) blur(20px); box-shadow: 4px 0 10px var(--glass-shadow); padding-top: 24px; transform: translateX(-100%); transition: transform 0.3s ease; z-index: 200; }
+      aside.sidebar.open { transform: translateX(0); }
+      main.main-content { margin: 0; border-radius: 0; padding: 16px 16px 0; }
+      footer.footer { height: 64px; padding: 0 16px; }
     }
-    header .logo {
-      font-weight: 700;
-      font-size: clamp(1.25rem, 1vw + 0.5rem, 1.5rem);
-      color: var(--primary-color);
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      user-select: text;
-      user-drag: none;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    header .logo .material-icons {
-      font-size: 32px;
-      color: var(--accent-color);
-    }
-    /* Nav in header */
-    header nav {
-      margin-left: auto;
-      display: flex;
-      gap: 24px;
-      align-items: center;
-    }
-    header nav button {
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      color: var(--font-color-light);
-      font-size: 20px;
-      padding: 8px;
-      border-radius: var(--border-radius);
-      transition: background-color var(--transition);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    header nav button:focus,
-    header nav button:hover {
-      background-color: var(--accent-color);
-      color: white;
-      outline-offset: 2px;
-    }
-    /* Sidebar */
-    aside.sidebar {
-      grid-area: sidebar;
-      background: var(--glass-bg);
-      box-shadow: 4px 0 10px var(--glass-shadow);
-      backdrop-filter: saturate(180%) blur(20px);
-      padding: 24px 16px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      overflow-y: auto;
-      scrollbar-width: thin;
-      scrollbar-color: var(--accent-color) transparent;
-      user-select: none;
-      min-width: 280px;
-    }
-    aside.sidebar::-webkit-scrollbar {
-      width: 8px;
-    }
-    aside.sidebar::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    aside.sidebar::-webkit-scrollbar-thumb {
-      background-color: var(--accent-color);
-      border-radius: 10px;
-    }
-    aside.sidebar .menu-title {
-      font-weight: 600;
-      color: var(--primary-color);
-      letter-spacing: 0.05em;
-      font-size: 0.875rem;
-      text-transform: uppercase;
-      padding-left: 8px;
-      margin-bottom: 8px;
-      user-select: text;
-    }
-    aside.sidebar nav.menu {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    aside.sidebar nav.menu a {
-      color: var(--font-color-light);
-      text-decoration: none;
-      font-weight: 500;
-      font-size: 1rem;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      padding: 10px 12px;
-      border-radius: var(--border-radius);
-      transition: background-color var(--transition), color var(--transition);
-      position: relative;
-    }
-    aside.sidebar nav.menu a .material-icons {
-      font-size: 24px;
-      color: var(--accent-color);
-      flex-shrink: 0;
-      user-select: none;
-    }
-    aside.sidebar nav.menu a:hover,
-    aside.sidebar nav.menu a:focus {
-      background-color: var(--accent-color);
-      color: white;
-      outline: none;
-    }
-    aside.sidebar nav.menu a:hover .material-icons,
-    aside.sidebar nav.menu a:focus .material-icons {
-      color: white;
-    }
-    /* Notification Badge */
-    aside.sidebar nav.menu a .badge {
-      font-size: 0.7rem;
-      background: var(--error-color);
-      color: white;
-      min-width: 20px;
-      height: 20px;
-      border-radius: 9999px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-weight: 700;
-      user-select: none;
-    }
+    .sr-only { position: absolute !important; width: 1px !important; height: 1px !important; padding: 0 !important; margin: -1px !important; overflow: hidden !important; clip: rect(0, 0, 0, 0) !important; white-space: nowrap !important; border: 0 !important; }
+    .detect-sign-section, .sleep-detect-section, .law-lookup-section { display: flex; flex-direction: column; gap: 24px; animation: fadeIn 0.3s ease; max-height: calc(100vh - 200px); overflow-y: auto; padding-right: 8px; scrollbar-width: thin; scrollbar-color: var(--accent-color) transparent; }
+    .detect-sign-section::-webkit-scrollbar, .sleep-detect-section::-webkit-scrollbar, .law-lookup-section::-webkit-scrollbar { width: 8px; }
+    .detect-sign-section::-webkit-scrollbar-thumb, .sleep-detect-section::-webkit-scrollbar-thumb, .law-lookup-section::-webkit-scrollbar-thumb { background-color: var(--accent-color); border-radius: 10px; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    .detect-header h2 { font-weight: 700; color: var(--primary-color); margin: 0 0 8px 0; font-size: clamp(1.5rem, 2vw + 0.5rem, 2rem); }
+    .detect-header p { color: var(--font-color-light); margin: 0; font-size: 1rem; line-height: 1.5; }
+    .mode-toggle { display: flex; gap: 12px; margin-bottom: 16px; justify-content: center; }
+    .mode-toggle button { background: white; border: 2px solid var(--accent-color); color: var(--accent-color); padding: 10px 20px; border-radius: var(--border-radius); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all var(--transition); display: flex; align-items: center; gap: 8px; }
+    .mode-toggle button.active { background: var(--accent-color); color: white; }
+    .mode-toggle button:hover:not(.active) { background: #f0f9ff; transform: translateY(-2px); }
+    .camera-container { width: 100%; max-width: 640px; margin: 0 auto; display: none; flex-direction: column; gap: 16px; align-items: center; }
+    .camera-container.active { display: flex; }
+    .camera-container video { width: 100%; max-width: 640px; border-radius: var(--border-radius); box-shadow: 0 4px 20px var(--glass-shadow); background: #000; }
+    .camera-controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+    .camera-controls button { background: var(--success-color); color: white; border: none; padding: 12px 24px; border-radius: var(--border-radius); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all var(--transition); display: flex; align-items: center; gap: 8px; }
+    .camera-controls button:hover { background: #15803d; transform: translateY(-2px); }
+    .camera-controls button.close-camera { background: var(--error-color); }
+    .camera-controls button.close-camera:hover { background: #b91c1c; }
+    #detectForm, #sleepDetectForm { background: var(--glass-bg); backdrop-filter: saturate(180%) blur(20px); padding: 32px; border-radius: var(--border-radius); box-shadow: 0 4px 20px var(--glass-shadow); display: flex; flex-direction: column; gap: 20px; align-items: center; }
+    .file-input-wrapper { width: 100%; max-width: 500px; position: relative; }
+    .file-input-wrapper input[type="file"] { display: none; }
+    .file-input-label { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 48px 24px; border: 2px dashed var(--accent-color); border-radius: var(--border-radius); background: white; cursor: pointer; transition: all var(--transition); text-align: center; gap: 12px; }
+    .file-input-label:hover { border-color: var(--primary-color); background: #f0f9ff; transform: translateY(-2px); }
+    .file-input-label .material-icons { font-size: 64px; color: var(--accent-color); }
+    .file-input-label span { font-size: 1rem; color: var(--font-color-light); font-weight: 500; }
+    .file-input-label.has-file { border-color: var(--success-color); background: #f0fdf4; }
+    .file-input-label.has-file .material-icons { color: var(--success-color); }
+    #imagePreview, #sleepImagePreview { max-width: 100%; max-height: 400px; border-radius: var(--border-radius); margin-top: 16px; box-shadow: 0 4px 20px var(--glass-shadow); display: none; }
+    #imagePreview.show, #sleepImagePreview.show { display: block; }
+    #detectBtn, #sleepDetectBtn { background: var(--accent-color); color: white; border: none; padding: 14px 32px; border-radius: var(--border-radius); font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all var(--transition); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3); }
+    #detectBtn:hover:not(:disabled), #sleepDetectBtn:hover:not(:disabled) { background: var(--primary-color); transform: translateY(-2px); }
+    #detectBtn:disabled, #sleepDetectBtn:disabled { background: #94a3b8; cursor: not-allowed; }
+    #detectBtn .material-icons, #sleepDetectBtn .material-icons { font-size: 24px; }
+    .spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-top: 3px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; display: none; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    #detectBtn.loading .spinner, #sleepDetectBtn.loading .spinner { display: block; }
+    #detectBtn.loading .btn-text, #sleepDetectBtn.loading .btn-text { display: none; }
+    .detect-result { background: white; padding: 32px; border-radius: var(--border-radius); box-shadow: 0 4px 20px var(--glass-shadow); animation: slideUp 0.4s ease; }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .detect-result h3 { color: var(--primary-color); margin: 0 0 16px 0; font-size: 1.5rem; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+    .detect-result h3 .material-icons { color: var(--success-color); font-size: 32px; }
+    #resultText, #sleepResultText { color: var(--font-color); font-size: 1.1rem; line-height: 1.8; margin: 0 0 24px 0; padding: 20px; background: #f0f9ff; border-radius: var(--border-radius); border-left: 4px solid var(--accent-color); white-space: pre-wrap; }
+    #downloadBtn, #sleepDownloadBtn { background: var(--success-color); color: white; border: none; padding: 12px 24px; border-radius: var(--border-radius); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all var(--transition); display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3); }
+    #downloadBtn:hover, #sleepDownloadBtn:hover { background: #15803d; transform: translateY(-2px); }
+    #downloadBtn .material-icons, #sleepDownloadBtn .material-icons { font-size: 20px; }
 
-    /* MAIN CONTENT - Chat area */
-    main.main-content {
-      grid-area: main;
-      background: white;
-      display: flex;
-      flex-direction: column;
-      padding: 24px 32px;
-      min-height: calc(100vh - 64px);
-      overflow: hidden;
-      box-shadow: 0 0 32px rgb(3 105 161 / 0.1);
-      border-radius: var(--border-radius);
-      margin: 16px;
+    /* VOICE MODE CSS */
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+      70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
     }
-    /* Chat header */
-    main.main-content .chat-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding-bottom: 12px;
-      border-bottom: 1px solid #dee3e8;
-      user-select: none;
+    .mic-listening {
+      background-color: var(--error-color) !important;
+      animation: pulse-red 1.5s infinite;
     }
-    main.main-content .chat-header h2 {
-      font-weight: 700;
-      color: var(--primary-color);
-      margin: 0;
-      font-size: clamp(1.25rem, 1vw + 0.25rem, 1.5rem);
-    }
-    main.main-content .chat-header button {
+    .tts-button {
       background: none;
       border: none;
       color: var(--accent-color);
       cursor: pointer;
-      font-size: 28px;
-      border-radius: var(--border-radius);
-      padding: 6px;
-      transition: background-color var(--transition);
-    }
-    main.main-content .chat-header button:focus,
-    main.main-content .chat-header button:hover {
-      background-color: var(--accent-color);
-      color: white;
-      outline-offset: 2px;
-    }
-
-    /* Chat messages container */
-    .chat-messages {
-      flex: 1;
-      margin-top: 24px;
-      overflow-y: auto;
-      padding-right: 16px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--accent-color) transparent;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-    }
-    .chat-messages::-webkit-scrollbar {
-      width: 8px;
-    }
-    .chat-messages::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .chat-messages::-webkit-scrollbar-thumb {
-      background-color: var(--accent-color);
-      border-radius: 10px;
-    }
-
-    /* Single message */
-    .message {
-      max-width: 75%;
-      padding: 14px 20px;
-      border-radius: var(--border-radius);
-      position: relative;
-      font-size: 1rem;
-      line-height: 1.4;
-      box-shadow: 0 1px 6px rgb(0 0 0 / 0.06);
-      transition: box-shadow 0.3s ease;
-      user-select: text;
-      white-space: pre-wrap;
-      word-wrap: break-word;
-    }
-    .message:hover {
-      box-shadow: 0 4px 20px rgb(3 105 161 / 0.15);
-    }
-    /* User message */
-    .message.user {
-      background: var(--primary-color);
-      color: white;
-      align-self: flex-end;
-      border-bottom-right-radius: 4px;
-      border-bottom-left-radius: var(--border-radius);
-      border-top-right-radius: var(--border-radius);
-    }
-    /* AI message */
-    .message.ai {
-      background: #e0efff;
-      color: var(--primary-color);
-      align-self: flex-start;
-      border-bottom-left-radius: 4px;
-      border-bottom-right-radius: var(--border-radius);
-      border-top-left-radius: var(--border-radius);
-    }
-    /* Style cho cả 2 ảnh kết quả */
-    #detectResult img, #sleepDetectResult img {
-      display: block;
-      margin: 10px auto;
-      max-height: 500px;
-      box-shadow: 0 0 8px rgba(0,0,0,0.2);
-    }
-
-    /* Chat input form */
-    form.chat-input {
-      display: flex;
-      margin-top: 24px;
-      gap: 8px;
-      align-items: center;
-      border-top: 1px solid #dee3e8;
-      padding-top: 16px;
-    }
-    form.chat-input textarea {
-      flex-grow: 1;
-      resize: none;
-      border-radius: var(--border-radius);
-      border: 1.5px solid #cbd5e1;
-      font-family: inherit;
-      font-size: 1rem;
-      padding: 12px 16px;
-      min-height: 48px;
-      max-height: 120px;
-      line-height: 1.4;
-      transition: border-color var(--transition);
-    }
-    form.chat-input textarea:focus {
-      outline: none;
-      border-color: var(--accent-color);
-      box-shadow: 0 0 8px var(--accent-color);
-    }
-    form.chat-input button {
-      background-color: var(--accent-color);
-      border: none;
-      color: white;
       font-size: 1.5rem;
-      padding: 12px 20px;
-      border-radius: var(--border-radius);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background-color var(--transition);
-      min-width: 48px;
-      height: 48px;
-    }
-    form.chat-input button:disabled {
-      background-color: #94a3b8;
-      cursor: not-allowed;
-    }
-    form.chat-input button:focus,
-    form.chat-input button:hover:not(:disabled) {
-      background-color: var(--primary-color);
-      outline-offset: 2px;
-    }
-
-    /* FOOTER */
-    footer.footer {
-      grid-area: footer;
-      height: 48px;
-      background: var(--glass-bg);
-      box-shadow: 0 -4px 20px var(--glass-shadow);
-      backdrop-filter: saturate(180%) blur(20px);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 24px;
-      font-size: 0.875rem;
-      color: var(--font-color-light);
-      user-select: none;
-    }
-    footer.footer .status {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    footer.footer .status .material-icons {
-      font-size: 20px;
-      color: var(--accent-color);
-    }
-    footer.footer .social-links a {
-      color: var(--accent-color);
-      text-decoration: none;
-      font-size: 20px;
-      margin-left: 16px;
+      padding: 0;
+      flex-shrink: 0;
+      margin-top: 5px;
       transition: color var(--transition);
     }
-    footer.footer .social-links a:hover,
-    footer.footer .social-links a:focus {
-      color: var(--primary-color);
-      outline-offset: 2px;
-    }
-
-    /* Responsive layout */
-    @media (max-width: 1023px) {
-      .app-container {
-        grid-template-columns: 72px 1fr;
-      }
-      aside.sidebar {
-        min-width: 72px;
-        padding: 16px 8px 16px;
-      }
-      aside.sidebar .menu-title {
-        display: none;
-      }
-      aside.sidebar nav.menu a {
-        justify-content: center;
-        padding: 8px;
-      }
-      aside.sidebar nav.menu a .text-label {
-        display: none;
-      }
-    }
-    @media (max-width: 640px) {
-      .app-container {
-        grid-template-columns: 1fr;
-        grid-template-rows: 64px 1fr 64px;
-        grid-template-areas:
-          "header"
-          "main"
-          "footer";
-      }
-      aside.sidebar {
-        position: fixed;
-        inset: 64px auto auto 0;
-        width: 280px;
-        height: calc(100vh - 64px);
-        background: var(--glass-bg);
-        backdrop-filter: saturate(180%) blur(20px);
-        box-shadow: 4px 0 10px var(--glass-shadow);
-        padding-top: 24px;
-        transform: translateX(-100%);
-        transition: transform 0.3s ease;
-        z-index: 200;
-      }
-      aside.sidebar.open {
-        transform: translateX(0);
-      }
-      main.main-content {
-        margin: 0;
-        border-radius: 0;
-        padding: 16px 16px 0;
-      }
-      footer.footer {
-        height: 64px;
-        padding: 0 16px;
-      }
-    }
-
-    /* Scrollbar customization for desktop */
-    @media (hover: hover) and (pointer: fine) {
-      main.main-content:hover, .chat-messages:hover {
-        scrollbar-width: thin;
-      }
-    }
-
-    /* Utility styles */
-    .sr-only {
-      position: absolute !important;
-      width: 1px !important;
-      height: 1px !important;
-      padding: 0 !important;
-      margin: -1px !important;
-      overflow: hidden !important;
-      clip: rect(0, 0, 0, 0) !important;
-      white-space: nowrap !important;
-      border: 0 !important;
-    }
-
-    /* Detect Sign Section Styles */
-    .detect-sign-section, .sleep-detect-section {
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      animation: fadeIn 0.3s ease;
-      max-height: calc(100vh - 200px);
-      overflow-y: auto;
-      padding-right: 8px;
-      scrollbar-width: thin;
-      scrollbar-color: var(--accent-color) transparent;
-      -webkit-overflow-scrolling: touch;
-      touch-action: pan-y;
-    }
-    
-    .detect-sign-section::-webkit-scrollbar,
-    .sleep-detect-section::-webkit-scrollbar {
-      width: 8px;
-    }
-    .detect-sign-section::-webkit-scrollbar-track,
-    .sleep-detect-section::-webkit-scrollbar-track {
-      background: transparent;
-      border-radius: 10px;
-    }
-    .detect-sign-section::-webkit-scrollbar-thumb,
-    .sleep-detect-section::-webkit-scrollbar-thumb {
-      background-color: var(--accent-color);
-      border-radius: 10px;
-      transition: background-color 0.3s ease;
-    }
-    .detect-sign-section::-webkit-scrollbar-thumb:hover,
-    .sleep-detect-section::-webkit-scrollbar-thumb:hover {
-      background-color: var(--primary-color);
-    }
-    
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .detect-header h2 {
-      font-weight: 700;
-      color: var(--primary-color);
-      margin: 0 0 8px 0;
-      font-size: clamp(1.5rem, 2vw + 0.5rem, 2rem);
-    }
-    .detect-header p {
-      color: var(--font-color-light);
-      margin: 0;
-      font-size: 1rem;
-      line-height: 1.5;
-    }
-
-    /* MỚI: Toggle buttons cho Camera/Upload */
-    .mode-toggle {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 16px;
-      justify-content: center;
-    }
-    .mode-toggle button {
-      background: white;
-      border: 2px solid var(--accent-color);
-      color: var(--accent-color);
-      padding: 10px 20px;
-      border-radius: var(--border-radius);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .mode-toggle button.active {
-      background: var(--accent-color);
-      color: white;
-    }
-    .mode-toggle button:hover:not(.active) {
-      background: #f0f9ff;
-      transform: translateY(-2px);
-    }
-
-    /* MỚI: Camera container */
-    .camera-container {
-      width: 100%;
-      max-width: 640px;
-      margin: 0 auto;
-      display: none;
-      flex-direction: column;
-      gap: 16px;
-      align-items: center;
-    }
-    .camera-container.active {
-      display: flex;
-    }
-    .camera-container video {
-      width: 100%;
-      max-width: 640px;
-      border-radius: var(--border-radius);
-      box-shadow: 0 4px 20px var(--glass-shadow);
-      background: #000;
-    }
-    .camera-controls {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .camera-controls button {
-      background: var(--success-color);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: var(--border-radius);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .camera-controls button:hover {
-      background: #15803d;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4);
-    }
-    .camera-controls button.close-camera {
-      background: var(--error-color);
-    }
-    .camera-controls button.close-camera:hover {
-      background: #b91c1c;
-    }
-
-    #detectForm, #sleepDetectForm {
-      background: var(--glass-bg);
-      backdrop-filter: saturate(180%) blur(20px);
-      padding: 32px;
-      border-radius: var(--border-radius);
-      box-shadow: 0 4px 20px var(--glass-shadow);
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
-      align-items: center;
-    }
-    .file-input-wrapper {
-      width: 100%;
-      max-width: 500px;
-      position: relative;
-    }
-    .file-input-wrapper input[type="file"] {
-      display: none;
-    }
-    .file-input-label {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 48px 24px;
-      border: 2px dashed var(--accent-color);
-      border-radius: var(--border-radius);
-      background: white;
-      cursor: pointer;
-      transition: all var(--transition);
-      text-align: center;
-      gap: 12px;
-    }
-    .file-input-label:hover {
-      border-color: var(--primary-color);
-      background: #f0f9ff;
-      transform: translateY(-2px);
-      box-shadow: 0 8px 24px var(--glass-shadow);
-    }
-    .file-input-label .material-icons {
-      font-size: 64px;
-      color: var(--accent-color);
-    }
-    .file-input-label span {
-      font-size: 1rem;
-      color: var(--font-color-light);
-      font-weight: 500;
-    }
-    .file-input-label.has-file {
-      border-color: var(--success-color);
-      background: #f0fdf4;
-    }
-    .file-input-label.has-file .material-icons {
-      color: var(--success-color);
-    }
-    #imagePreview, #sleepImagePreview {
-      max-width: 100%;
-      max-height: 400px;
-      border-radius: var(--border-radius);
-      margin-top: 16px;
-      box-shadow: 0 4px 20px var(--glass-shadow);
-      display: none;
-    }
-    #imagePreview.show, #sleepImagePreview.show {
-      display: block;
-    }
-    #detectBtn, #sleepDetectBtn {
-      background: var(--accent-color);
-      color: white;
-      border: none;
-      padding: 14px 32px;
-      border-radius: var(--border-radius);
-      font-size: 1.1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 12px rgba(2, 132, 199, 0.3);
-    }
-    #detectBtn:hover:not(:disabled), #sleepDetectBtn:hover:not(:disabled) {
-      background: var(--primary-color);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(3, 105, 161, 0.4);
-    }
-    #detectBtn:disabled, #sleepDetectBtn:disabled {
-      background: #94a3b8;
-      cursor: not-allowed;
-      transform: none;
-    }
-    #detectBtn .material-icons, #sleepDetectBtn .material-icons {
-      font-size: 24px;
-    }
-    .spinner {
-      border: 3px solid rgba(255, 255, 255, 0.3);
-      border-top: 3px solid white;
-      border-radius: 50%;
-      width: 20px;
-      height: 20px;
-      animation: spin 0.8s linear infinite;
-      display: none;
-    }
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-    #detectBtn.loading .spinner, #sleepDetectBtn.loading .spinner {
-      display: block;
-    }
-    #detectBtn.loading .btn-text, #sleepDetectBtn.loading .btn-text {
-      display: none;
-    }
-    .detect-result {
-      background: white;
-      padding: 32px;
-      border-radius: var(--border-radius);
-      box-shadow: 0 4px 20px var(--glass-shadow);
-      animation: slideUp 0.4s ease;
-    }
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(20px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    .detect-result h3 {
-      color: var(--primary-color);
-      margin: 0 0 16px 0;
-      font-size: 1.5rem;
-      font-weight: 700;
-      display: flex;
-      align-items: center;
-      gap: 12px;
-    }
-    .detect-result h3 .material-icons {
-      color: var(--success-color);
-      font-size: 32px;
-    }
-    #resultText, #sleepResultText {
-      color: var(--font-color);
-      font-size: 1.1rem;
-      line-height: 1.8;
-      margin: 0 0 24px 0;
-      padding: 20px;
-      background: #f0f9ff;
-      border-radius: var(--border-radius);
-      border-left: 4px solid var(--accent-color);
-      white-space: pre-wrap;
-    }
-    #downloadBtn, #sleepDownloadBtn {
-      background: var(--success-color);
-      color: white;
-      border: none;
-      padding: 12px 24px;
-      border-radius: var(--border-radius);
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all var(--transition);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
-    }
-    #downloadBtn:hover, #sleepDownloadBtn:hover {
-      background: #15803d;
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px rgba(22, 163, 74, 0.4);
-    }
-    #downloadBtn .material-icons, #sleepDownloadBtn .material-icons {
-      font-size: 20px;
-    }
+    .tts-button:hover { color: var(--primary-color); }
+    .tts-button.speaking { color: var(--error-color); animation: spin 2s linear infinite; }
   </style>
 </head>
 <body>
   <div class="app-container" role="application" aria-label="Ứng dụng Chat AI Y tế">
     <header role="banner">
       <a href="#" class="logo" aria-label="Trang chủ ứng dụng AI Y tế">
-        <span class="material-icons" aria-hidden="true">medication</span> AI Y tế
+        <span class="material-icons" aria-hidden="true">medication</span> CHAT BOX
       </a>
       <nav aria-label="Thanh điều hướng chính">
         <button id="btnToggleSidebar" aria-expanded="false" aria-controls="sidebar" aria-label="Mở / Đóng menu điều hướng">
@@ -809,6 +186,10 @@
           <span class="material-icons" aria-hidden="true">chat</span>
           <span class="text-label">Trò chuyện</span>
         </a>
+        <a href="#" id="lawLookupMenu" tabindex="0">
+          <span class="material-icons" aria-hidden="true" style="color: var(--secondary-color);">gavel</span>
+          <span class="text-label">Tra cứu Luật</span>
+        </a>
         <a href="#" tabindex="0">
           <span class="material-icons" aria-hidden="true">history</span>
           <span class="text-label">Lịch sử</span>
@@ -829,57 +210,78 @@
     </aside>
 
     <main class="main-content" role="main" aria-label="Nội dung chính">
-      <section class="chat-header">
-        <h2>Trò chuyện với AI Y tế</h2>
-        <button aria-label="Xóa lịch sử trò chuyện" id="btnClearChat">
-          <span class="material-icons" aria-hidden="true">delete</span>
-        </button>
+      <section id="mainChatSection" style="display: flex; flex-direction: column; height: 100%;">
+        <section class="chat-header">
+          <h2>Trò chuyện với AI</h2>
+          <button aria-label="Xóa lịch sử trò chuyện" id="btnClearChat">
+            <span class="material-icons" aria-hidden="true">delete</span>
+          </button>
+        </section>
+        <section class="chat-messages" id="chatMessages" aria-live="polite" aria-label="Lịch sử tin nhắn">
+        </section>
+        
+        <form class="chat-input" id="chatForm">
+          <textarea id="userInput" placeholder="Nhập tin nhắn hoặc bấm Mic để nói..." aria-label="Nhập tin nhắn"></textarea>
+          
+          <select id="modelSelector" aria-label="Chọn mô hình AI">
+            <optgroup label="Chế độ Chat">
+              <option value="gemini">Chỉ Gemini</option>
+              <option value="openai">Chỉ OpenAI (GPT)</option>
+              <option value="deepseek">Chỉ DeepSeek</option>
+              <option value="hyper" selected>Hyper Chat (Tổng hợp)</option>
+            </optgroup>
+          </select>
+          
+          <button type="button" id="micBtn" aria-label="Ghi âm" style="background-color: var(--success-color);">
+             <span class="material-icons" aria-hidden="true">mic</span>
+          </button>
+          
+          <button type="submit" id="sendBtn" aria-label="Gửi tin nhắn">
+            <span class="material-icons" aria-hidden="true">send</span>
+          </button>
+        </form>
       </section>
-      <section class="chat-messages" id="chatMessages" aria-live="polite" aria-label="Lịch sử tin nhắn">
-      </section>
-      <form class="chat-input" id="chatForm">
-        <textarea id="userInput" placeholder="Nhập tin nhắn của bạn..." aria-label="Nhập tin nhắn"></textarea>
-        <button type="submit" id="sendBtn" aria-label="Gửi tin nhắn">
-          <span class="material-icons" aria-hidden="true">send</span>
-        </button>
-      </form>
 
-      <!-- DETECT SIGN SECTION -->
+      <section id="lawLookupSection" class="law-lookup-section" style="display: none; height: 100%;" aria-label="Khu vực tra cứu luật">
+        <div class="detect-header">
+          <h2>⚖️ Tra cứu Luật Giao thông (MCP Tool)</h2>
+          <p>Nhập câu hỏi của bạn để tìm kiếm thông tin từ các nguồn luật uy tín.</p>
+        </div>
+        
+        <form class="chat-input" id="lawLookupForm">
+          <textarea id="lawInput" placeholder="Nhập câu hỏi, ví dụ: 'vượt đèn đỏ phạt bao nhiêu?'" aria-label="Nhập câu hỏi tra cứu"></textarea>
+          
+          <select id="lawModelSelector" aria-label="Chọn AI tổng hợp">
+            <option value="gemini" selected>Gemini (Tổng hợp)</option>
+            <option value="openai">OpenAI (Tổng hợp)</option>
+            <option value="deepseek">DeepSeek (Tổng hợp)</option>
+          </select>
+          <button type="submit" id="lawSendBtn" aria-label="Gửi câu tra cứu">
+            <span class="material-icons" aria-hidden="true">search</span>
+          </button>
+        </form>
+        
+        <div class="chat-messages" id="lawMessages" aria-live="polite" aria-label="Kết quả tra cứu">
+        </div>
+      </section>
+
       <section id="detectSignSection" class="detect-sign-section" style="display: none;" aria-label="Khu vực nhận diện biển báo">
         <div class="detect-header">
           <h2>🚦 Nhận Diện Biển Báo Giao Thông</h2>
           <p>Chọn Camera để nhận diện trực tiếp hoặc Upload hình ảnh có sẵn</p>
         </div>
-
-        <!-- MỚI: Toggle Camera/Upload cho Biển Báo -->
         <div class="mode-toggle">
-          <button id="signCameraBtn" class="active">
-            <span class="material-icons">videocam</span>
-            Camera
-          </button>
-          <button id="signUploadBtn">
-            <span class="material-icons">cloud_upload</span>
-            Upload File
-          </button>
+          <button id="signCameraBtn" class="active"><span class="material-icons">videocam</span> Camera</button>
+          <button id="signUploadBtn"><span class="material-icons">cloud_upload</span> Upload File</button>
         </div>
-
-        <!-- MỚI: Camera Container cho Biển Báo -->
         <div id="signCameraContainer" class="camera-container active">
           <video id="signVideo" autoplay playsinline></video>
           <canvas id="signCanvas" style="display: none;"></canvas>
           <div class="camera-controls">
-            <button id="signCaptureBtn">
-              <span class="material-icons">camera_alt</span>
-              Chụp và Nhận Diện
-            </button>
-            <button id="signCloseCameraBtn" class="close-camera">
-              <span class="material-icons">videocam_off</span>
-              Đóng Camera
-            </button>
+            <button id="signCaptureBtn"><span class="material-icons">camera_alt</span> Chụp và Nhận Diện</button>
+            <button id="signCloseCameraBtn" class="close-camera"><span class="material-icons">videocam_off</span> Đóng Camera</button>
           </div>
         </div>
-
-        <!-- Form Upload (ẩn khi dùng camera) -->
         <form id="detectForm" enctype="multipart/form-data" style="display: none;">
           <div class="file-input-wrapper">
             <input type="file" id="fileInput" accept="image/*" required aria-label="Chọn file hình ảnh">
@@ -891,63 +293,34 @@
             <img id="imagePreview" alt="Preview hình ảnh" />
           </div>
           <button type="submit" id="detectBtn">
-            <span class="btn-text">
-              <span class="material-icons">visibility</span>
-              Nhận Diện Biển Báo
-            </span>
+            <span class="btn-text"><span class="material-icons">visibility</span> Nhận Diện Biển Báo</span>
             <span class="spinner"></span>
           </button>
         </form>
-
         <div id="detectResult" class="detect-result" style="display: none;">
-          <h3>
-            <span class="material-icons">check_circle</span>
-            Kết Quả Nhận Diện
-          </h3>
+          <h3><span class="material-icons">check_circle</span> Kết Quả Nhận Diện</h3>
           <p id="resultText"></p>
-          <button id="downloadBtn">
-            <span class="material-icons">download</span>
-            Tải Xuống Kết Quả
-          </button>
+          <button id="downloadBtn"><span class="material-icons">download</span> Tải Xuống Kết Quả</button>
         </div>
       </section>
 
-      <!-- SLEEP DETECT SECTION -->
       <section id="sleepDetectSection" class="sleep-detect-section" style="display: none;" aria-label="Khu vực nhận diện ngủ gật">
         <div class="detect-header">
           <h2>😴 Nhận Diện Ngủ Gật</h2>
           <p>Chọn Camera để nhận diện trực tiếp hoặc Upload hình ảnh có sẵn</p>
         </div>
-
-        <!-- MỚI: Toggle Camera/Upload cho Ngủ Gật -->
         <div class="mode-toggle">
-          <button id="sleepCameraBtn" class="active">
-            <span class="material-icons">videocam</span>
-            Camera
-          </button>
-          <button id="sleepUploadBtn">
-            <span class="material-icons">cloud_upload</span>
-            Upload File
-          </button>
+          <button id="sleepCameraBtn" class="active"><span class="material-icons">videocam</span> Camera</button>
+          <button id="sleepUploadBtn"><span class="material-icons">cloud_upload</span> Upload File</button>
         </div>
-
-        <!-- MỚI: Camera Container cho Ngủ Gật -->
         <div id="sleepCameraContainer" class="camera-container active">
           <video id="sleepVideo" autoplay playsinline></video>
           <canvas id="sleepCanvas" style="display: none;"></canvas>
           <div class="camera-controls">
-            <button id="sleepCaptureBtn">
-              <span class="material-icons">camera_alt</span>
-              Chụp và Nhận Diện
-            </button>
-            <button id="sleepCloseCameraBtn" class="close-camera">
-              <span class="material-icons">videocam_off</span>
-              Đóng Camera
-            </button>
+            <button id="sleepCaptureBtn"><span class="material-icons">camera_alt</span> Chụp và Nhận Diện</button>
+            <button id="sleepCloseCameraBtn" class="close-camera"><span class="material-icons">videocam_off</span> Đóng Camera</button>
           </div>
         </div>
-
-        <!-- Form Upload (ẩn khi dùng camera) -->
         <form id="sleepDetectForm" enctype="multipart/form-data" style="display: none;">
           <div class="file-input-wrapper">
             <input type="file" id="sleepFileInput" accept="image/*" required aria-label="Chọn file hình ảnh">
@@ -959,24 +332,14 @@
             <img id="sleepImagePreview" alt="Preview hình ảnh" />
           </div>
           <button type="submit" id="sleepDetectBtn">
-            <span class="btn-text">
-              <span class="material-icons">bedtime</span>
-              Nhận Diện Ngủ Gật
-            </span>
+            <span class="btn-text"><span class="material-icons">bedtime</span> Nhận Diện Ngủ Gật</span>
             <span class="spinner"></span>
           </button>
         </form>
-
         <div id="sleepDetectResult" class="detect-result" style="display: none;">
-          <h3>
-            <span class="material-icons">check_circle</span>
-            Kết Quả Phân Tích
-          </h3>
+          <h3><span class="material-icons">check_circle</span> Kết Quả Phân Tích</h3>
           <p id="sleepResultText"></p>
-          <button id="sleepDownloadBtn">
-            <span class="material-icons">download</span>
-            Tải Xuống Kết Quả
-          </button>
+          <button id="sleepDownloadBtn"><span class="material-icons">download</span> Tải Xuống Kết Quả</button>
         </div>
       </section>
     </main>
@@ -987,15 +350,9 @@
         <span>Trực tuyến</span>
       </div>
       <div class="social-links">
-        <a href="#" aria-label="Liên kết Facebook">
-          <span class="material-icons" aria-hidden="true">facebook</span>
-        </a>
-        <a href="#" aria-label="Liên kết Twitter">
-          <span class="material-icons" aria-hidden="true">twitter</span>
-        </a>
-        <a href="#" aria-label="Liên kết LinkedIn">
-          <span class="material-icons" aria-hidden="true">linkedin</span>
-        </a>
+        <a href="#" aria-label="Liên kết Facebook"><span class="material-icons" aria-hidden="true">facebook</span></a>
+        <a href="#" aria-label="Liên kết Twitter"><span class="material-icons" aria-hidden="true">twitter</span></a>
+        <a href="#" aria-label="Liên kết LinkedIn"><span class="material-icons" aria-hidden="true">linkedin</span></a>
       </div>
     </footer>
   </div>
@@ -1009,10 +366,13 @@
     const btnClearChat = document.getElementById('btnClearChat');
     const btnToggleSidebar = document.getElementById('btnToggleSidebar');
     const sidebar = document.getElementById('sidebar');
-
-    // Chat
+    const modelSelector = document.getElementById('modelSelector');
     const chatMenu = document.getElementById('chatMenu');
-    const chatHeader = document.querySelector('.chat-header');
+    const mainChatSection = document.getElementById('mainChatSection');
+    
+    // Biến cho Voice Mode
+    const micBtn = document.getElementById('micBtn');
+    let recognition = null;
     
     // Detect Sign
     const detectSignMenu = document.getElementById('detectSignMenu');
@@ -1025,8 +385,6 @@
     const fileLabel = document.getElementById('fileLabel');
     const imagePreview = document.getElementById('imagePreview');
     const detectBtn = document.getElementById('detectBtn');
-
-    // MỚI: Camera cho Biển Báo
     const signCameraBtn = document.getElementById('signCameraBtn');
     const signUploadBtn = document.getElementById('signUploadBtn');
     const signCameraContainer = document.getElementById('signCameraContainer');
@@ -1047,8 +405,6 @@
     const sleepFileLabel = document.getElementById('sleepFileLabel');
     const sleepImagePreview = document.getElementById('sleepImagePreview');
     const sleepDetectBtn = document.getElementById('sleepDetectBtn');
-
-    // MỚI: Camera cho Ngủ Gật
     const sleepCameraBtn = document.getElementById('sleepCameraBtn');
     const sleepUploadBtn = document.getElementById('sleepUploadBtn');
     const sleepCameraContainer = document.getElementById('sleepCameraContainer');
@@ -1058,492 +414,507 @@
     const sleepCloseCameraBtn = document.getElementById('sleepCloseCameraBtn');
     let sleepStream = null;
 
+    // Biến Law Lookup
+    const lawLookupMenu = document.getElementById('lawLookupMenu');
+    const lawLookupSection = document.getElementById('lawLookupSection');
+    const lawLookupForm = document.getElementById('lawLookupForm');
+    const lawInput = document.getElementById('lawInput');
+    const lawSendBtn = document.getElementById('lawSendBtn');
+    const lawMessages = document.getElementById('lawMessages');
+    const lawModelSelector = document.getElementById('lawModelSelector'); 
+    
     let chatHistory = [];
 
-    // ===== CHAT FUNCTIONS =====
-    function addMessage(content, type) {
-      const messageDiv = document.createElement('div');
-      messageDiv.className = `message ${type}`;
-      messageDiv.textContent = content;
-      chatMessages.appendChild(messageDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
+    // ===== CÁC HÀM VOICE (TTS - Text to Speech) =====
+    function speakMessage(text, element) {
+        if ('speechSynthesis' in window) {
+            if (element) {
+                element.disabled = true;
+                element.classList.add('speaking');
+            }
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            
+            // Chọn giọng đọc
+            const voices = window.speechSynthesis.getVoices();
+            const vietnameseVoice = voices.find(voice => voice.lang.includes('vi'));
+            if (vietnameseVoice) utterance.voice = vietnameseVoice;
+            else utterance.lang = 'vi-VN'; // Fallback
+
+            utterance.rate = 1.0;
+            
+            utterance.onend = () => {
+                if (element) {
+                    element.disabled = false;
+                    element.classList.remove('speaking');
+                }
+            };
+            
+            utterance.onerror = () => {
+                 if (element) {
+                    element.disabled = false;
+                    element.classList.remove('speaking');
+                }
+            }
+
+            window.speechSynthesis.speak(utterance);
+        }
     }
 
+    function stopSpeech() {
+        if ('speechSynthesis' in window && window.speechSynthesis.speaking) {
+            window.speechSynthesis.cancel();
+        }
+        // Reset trạng thái các nút loa nếu có
+        document.querySelectorAll('.tts-button.speaking').forEach(btn => {
+            btn.classList.remove('speaking');
+            btn.disabled = false;
+        });
+    }
+
+    // ===== HÀM MỚI SỬA LỖI: TẮT TẤT CẢ CAMERA =====
+    function stopAllCameras() {
+      stopSignCamera();
+      stopSleepCamera();
+    }
+    // ===============================================
+
+    // ===== CHAT FUNCTIONS =====
+    // Hàm addMessage CHÍNH - Đã update để hỗ trợ nút Loa
+    function addMessage(content, type, textToSpeak = '') {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      
+      if (type === 'ai') {
+          const contentWrapper = document.createElement('div');
+          contentWrapper.style.display = 'flex';
+          contentWrapper.style.gap = '10px';
+          contentWrapper.style.alignItems = 'flex-start';
+
+          // Nút đọc
+          const speakBtn = document.createElement('button');
+          speakBtn.className = 'tts-button';
+          speakBtn.innerHTML = '<span class="material-icons">volume_up</span>';
+          speakBtn.setAttribute('aria-label', 'Nghe tin nhắn');
+          
+          const messageContent = document.createElement('div');
+          messageContent.innerHTML = content;
+          messageContent.style.flexGrow = '1';
+          
+          // Lấy text sạch để đọc
+          const finalSpeakText = textToSpeak || messageContent.textContent.replace(/🤖 Phản hồi \([\w\s]+\):/g, '').trim();
+
+          speakBtn.onclick = () => {
+              stopSpeech();
+              speakMessage(finalSpeakText, speakBtn);
+          };
+
+          contentWrapper.appendChild(speakBtn);
+          contentWrapper.appendChild(messageContent);
+          messageDiv.appendChild(contentWrapper);
+      } else {
+          messageDiv.innerHTML = content;
+      }
+
+      chatMessages.appendChild(messageDiv);
+      chatMessages.scrollTop = chatMessages.scrollHeight;
+      return messageDiv; // Trả về element để dùng sau này
+    }
+    
+    function addLawMessage(content, type, modelName = '') { 
+      const messageDiv = document.createElement('div');
+      messageDiv.className = `message ${type}`;
+      if (type === 'ai') content = `<strong>🤖 Phản hồi (${modelName}):</strong><p>${content}</p>`; 
+      messageDiv.innerHTML = content;
+      lawMessages.appendChild(messageDiv);
+      lawMessages.scrollTop = lawMessages.scrollHeight;
+    }
+
+    async function getBase64FromUrl(url) {
+        const response = await fetch(url);
+        const blob = await response.blob();
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve({ base64: reader.result.split(',')[1], mimeType: blob.type });
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    }
+
+    // ----- XỬ LÝ GỬI TIN NHẮN CHAT -----
     chatForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const message = userInput.value.trim();
       if (!message) return;
 
+      const selectedModel = modelSelector.value;
+      let endpoint = '/chat';
+      switch (selectedModel) {
+          case 'gemini': endpoint = '/chat'; break;
+          case 'openai': endpoint = '/chat-openai'; break;
+          case 'deepseek': endpoint = '/chat-deepseek'; break;
+          case 'hyper': endpoint = '/chat-aggregate'; break;
+      }
+
       addMessage(message, 'user');
       userInput.value = '';
       sendBtn.disabled = true;
+      
+      const messageParts = [{ 'text': message }];
 
       try {
-        const response = await fetch('/chat', {
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message, history: chatHistory })
+          body: JSON.stringify({ parts: messageParts, history: chatHistory }) 
         });
+        
         const data = await response.json();
+        
         if (response.ok) {
-          addMessage(data.response, 'ai');
-          chatHistory.push({ role: 'user', parts: [{ text: message }] });
-          chatHistory.push({ role: 'model', parts: [{ text: data.response }] });
+          let responseHtml = "";
+          let finalAnswer = "";
+
+          if (selectedModel === 'hyper') {
+            responseHtml = `
+              <p style="font-size: 1.05rem; line-height: 1.6;">${data.final_answer}</p>
+              <details>
+                  <summary>Xem 3 phản hồi gốc</summary>
+                  <div>
+                      <p><strong>Gemini:</strong> ${data.sources.gemini}</p>
+                      <p><strong>OpenAI:</strong> ${data.sources.openai}</p>
+                      <p><strong>DeepSeek:</strong> ${data.sources.deepseek}</p>
+                  </div>
+              </details>
+            `;
+            finalAnswer = data.final_answer;
+          } else {
+            let modelName = selectedModel.charAt(0).toUpperCase() + selectedModel.slice(1);
+            if (selectedModel === 'openai') modelName = 'OpenAI (GPT)';
+            if (selectedModel === 'deepseek') modelName = 'DeepSeek';
+            responseHtml = `<strong>🤖 Phản hồi (${modelName}):</strong><p>${data.response}</p>`;
+            finalAnswer = data.response;
+          }
+          
+          // Thêm tin nhắn AI và lấy element trả về
+          const aiMsgElement = addMessage(responseHtml, 'ai', finalAnswer);
+          
+          chatHistory.push({ role: 'user', parts: messageParts }); 
+          chatHistory.push({ role: 'model', parts: [{ text: finalAnswer }] });
+
+          // === AUTO TTS: Tự động đọc phản hồi ===
+          const ttsBtn = aiMsgElement.querySelector('.tts-button');
+          if (ttsBtn && finalAnswer) {
+              stopSpeech();
+              speakMessage(finalAnswer, ttsBtn);
+          }
+          // ======================================
+
         } else {
-          addMessage('Lỗi: ' + data.error, 'ai');
+          addMessage(`Lỗi (${selectedModel}): ` + data.error, 'ai');
         }
       } catch (error) {
-        addMessage('Lỗi kết nối: ' + error.message, 'ai');
+        addMessage(`Lỗi kết nối (${selectedModel}): ` + error.message, 'ai');
       } finally {
         sendBtn.disabled = false;
       }
     });
 
-    btnClearChat.addEventListener('click', () => {
-      chatMessages.innerHTML = '';
-      chatHistory = [];
-    });
-
-    btnToggleSidebar.addEventListener('click', () => {
-      sidebar.classList.toggle('open');
-      btnToggleSidebar.setAttribute('aria-expanded', sidebar.classList.contains('open'));
-    });
-
-    // ===== NAVIGATION FUNCTIONS =====
-    function showChatSection() {
-      chatHeader.style.display = 'flex';
-      chatMessages.style.display = 'flex';
-      chatForm.style.display = 'flex';
-      detectSignSection.style.display = 'none';
-      sleepDetectSection.style.display = 'none';
-      stopAllCameras();
-    }
-
-    function showDetectSignSection() {
-      chatHeader.style.display = 'none';
-      chatMessages.style.display = 'none';
-      chatForm.style.display = 'none';
-      detectSignSection.style.display = 'flex';
-      sleepDetectSection.style.display = 'none';
-      stopSleepCamera();
-    }
-
-    function showSleepDetectSection() {
-      chatHeader.style.display = 'none';
-      chatMessages.style.display = 'none';
-      chatForm.style.display = 'none';
-      detectSignSection.style.display = 'none';
-      sleepDetectSection.style.display = 'flex';
-      stopSignCamera();
-    }
-
-    chatMenu.addEventListener('click', (e) => {
-      e.preventDefault();
-      showChatSection();
-    });
-
-    detectSignMenu.addEventListener('click', (e) => {
-      e.preventDefault();
-      showDetectSignSection();
-    });
-
-    sleepDetectMenu.addEventListener('click', (e) => {
-      e.preventDefault();
-      showSleepDetectSection();
-    });
-
-    document.addEventListener('DOMContentLoaded', showChatSection);
-
-    // ===== CAMERA FUNCTIONS (BIỂN BÁO) =====
-    async function startSignCamera() {
-      try {
-        signStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'environment', width: 640, height: 480 } 
-        });
-        signVideo.srcObject = signStream;
-      } catch (error) {
-        alert('Không thể truy cập camera: ' + error.message);
-      }
-    }
-
-    function stopSignCamera() {
-      if (signStream) {
-        signStream.getTracks().forEach(track => track.stop());
-        signStream = null;
-        signVideo.srcObject = null;
-      }
-    }
-
-    signCameraBtn.addEventListener('click', () => {
-      signCameraBtn.classList.add('active');
-      signUploadBtn.classList.remove('active');
-      signCameraContainer.style.display = 'flex';
-      detectForm.style.display = 'none';
-      detectResult.style.display = 'none';
-      startSignCamera();
-    });
-
-    signUploadBtn.addEventListener('click', () => {
-      signUploadBtn.classList.add('active');
-      signCameraBtn.classList.remove('active');
-      signCameraContainer.style.display = 'none';
-      detectForm.style.display = 'flex';
-      detectResult.style.display = 'none';
-      stopSignCamera();
-    });
-
-    signCloseCameraBtn.addEventListener('click', () => {
-      stopSignCamera();
-    });
-
-    signCaptureBtn.addEventListener('click', async () => {
-      if (!signStream) {
-        alert('Camera chưa được bật!');
-        return;
-      }
-
-      signCanvas.width = signVideo.videoWidth;
-      signCanvas.height = signVideo.videoHeight;
-      const ctx = signCanvas.getContext('2d');
-      ctx.drawImage(signVideo, 0, 0);
-
-      signCaptureBtn.disabled = true;
-      signCaptureBtn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
-
-      signCanvas.toBlob(async (blob) => {
-        const formData = new FormData();
-        formData.append('file', blob, 'capture.jpg');
-
-        try {
-          const response = await fetch('/detect-sign', {
-            method: 'POST',
-            body: formData
-          });
-          const data = await response.json();
-
-          if (response.ok) {
-            resultText.textContent = data.result;
-            detectResult.style.display = 'block';
-
-            let oldImg = document.getElementById('annotatedImgSign');
-            if (oldImg) oldImg.remove();
-
-            if (data.image_path) {
-              const annotatedImgUrl = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
-              let annotatedImg = document.createElement('img');
-              annotatedImg.id = 'annotatedImgSign';
-              annotatedImg.src = annotatedImgUrl;
-              annotatedImg.alt = 'Ảnh đã nhận diện';
-              annotatedImg.style.maxWidth = '100%';
-              annotatedImg.style.maxHeight = '500px';
-              annotatedImg.style.borderRadius = 'var(--border-radius)';
-              annotatedImg.style.marginTop = '16px';
-              resultText.parentNode.insertBefore(annotatedImg, resultText.nextSibling);
-            }
-
-            detectResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          } else {
-            alert('Lỗi: ' + data.error);
-          }
-        } catch (error) {
-          alert('Lỗi khi nhận diện: ' + error.message);
-        } finally {
-          signCaptureBtn.disabled = false;
-          signCaptureBtn.innerHTML = '<span class="material-icons">camera_alt</span> Chụp và Nhận Diện';
+    // ----- XỬ LÝ MIC (Ghi âm -> Tự gửi) -----
+    micBtn.addEventListener('click', () => {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Trình duyệt không hỗ trợ Voice. Hãy dùng Chrome/Edge.');
+            return;
         }
-      }, 'image/jpeg', 0.95);
-    });
 
-    // ===== CAMERA FUNCTIONS (NGỦ GẬT) =====
-    async function startSleepCamera() {
-      try {
-        sleepStream = await navigator.mediaDevices.getUserMedia({ 
-          video: { facingMode: 'user', width: 640, height: 480 } 
-        });
-        sleepVideo.srcObject = sleepStream;
-      } catch (error) {
-        alert('Không thể truy cập camera: ' + error.message);
-      }
-    }
+        stopSpeech(); // Dừng AI đang nói nếu có
 
-    function stopSleepCamera() {
-      if (sleepStream) {
-        sleepStream.getTracks().forEach(track => track.stop());
-        sleepStream = null;
-        sleepVideo.srcObject = null;
-      }
-    }
-
-    sleepCameraBtn.addEventListener('click', () => {
-      sleepCameraBtn.classList.add('active');
-      sleepUploadBtn.classList.remove('active');
-      sleepCameraContainer.style.display = 'flex';
-      sleepDetectForm.style.display = 'none';
-      sleepDetectResult.style.display = 'none';
-      startSleepCamera();
-    });
-
-    sleepUploadBtn.addEventListener('click', () => {
-      sleepUploadBtn.classList.add('active');
-      sleepCameraBtn.classList.remove('active');
-      sleepCameraContainer.style.display = 'none';
-      sleepDetectForm.style.display = 'flex';
-      sleepDetectResult.style.display = 'none';
-      stopSleepCamera();
-    });
-
-    sleepCloseCameraBtn.addEventListener('click', () => {
-      stopSleepCamera();
-    });
-
-    sleepCaptureBtn.addEventListener('click', async () => {
-      if (!sleepStream) {
-        alert('Camera chưa được bật!');
-        return;
-      }
-
-      sleepCanvas.width = sleepVideo.videoWidth;
-      sleepCanvas.height = sleepVideo.videoHeight;
-      const ctx = sleepCanvas.getContext('2d');
-      ctx.drawImage(sleepVideo, 0, 0);
-
-      sleepCaptureBtn.disabled = true;
-      sleepCaptureBtn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
-
-      sleepCanvas.toBlob(async (blob) => {
-        const formData = new FormData();
-        formData.append('file', blob, 'capture.jpg');
-
-        try {
-          const response = await fetch('/detect-sleep', {
-            method: 'POST',
-            body: formData
-          });
-          const data = await response.json();
-
-          if (response.ok) {
-            sleepResultText.textContent = data.result;
-            sleepDetectResult.style.display = 'block';
-
-            let oldImg = document.getElementById('annotatedImgSleep');
-            if (oldImg) oldImg.remove();
-
-            if (data.image_path) {
-              const annotatedImgUrl = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
-              let annotatedImg = document.createElement('img');
-              annotatedImg.id = 'annotatedImgSleep';
-              annotatedImg.src = annotatedImgUrl;
-              annotatedImg.alt = 'Ảnh đã nhận diện ngủ gật';
-              annotatedImg.style.maxWidth = '100%';
-              annotatedImg.style.maxHeight = '500px';
-              annotatedImg.style.borderRadius = 'var(--border-radius)';
-              annotatedImg.style.marginTop = '16px';
-              sleepResultText.parentNode.insertBefore(annotatedImg, sleepResultText.nextSibling);
-            }
-
-            sleepDetectResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          } else {
-            alert('Lỗi: ' + data.error);
-          }
-        } catch (error) {
-          alert('Lỗi khi nhận diện: ' + error.message);
-        } finally {
-          sleepCaptureBtn.disabled = false;
-          sleepCaptureBtn.innerHTML = '<span class="material-icons">camera_alt</span> Chụp và Nhận Diện';
+        // Logic bật/tắt mic
+        if (micBtn.classList.contains('mic-listening')) {
+             if (recognition) recognition.stop();
+             return;
         }
-      }, 'image/jpeg', 0.95);
-    });
 
-    function stopAllCameras() {
-      stopSignCamera();
-      stopSleepCamera();
-    }
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'vi-VN';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
 
-    // ===== FILE UPLOAD FUNCTIONS =====
-    fileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        if (file.size > 16 * 1024 * 1024) {
-          alert('File quá lớn! Vui lòng chọn file nhỏ hơn 16MB.');
-          fileInput.value = '';
-          return;
-        }
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-        if (!validTypes.includes(file.type)) {
-          alert('Định dạng file không hợp lệ! Chỉ chấp nhận JPG, PNG, JPEG.');
-          fileInput.value = '';
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          imagePreview.src = event.target.result;
-          imagePreview.classList.add('show');
-          fileLabel.classList.add('has-file');
-          fileLabel.querySelector('span:nth-child(2)').textContent = file.name;
+        let finalTranscript = '';
+
+        recognition.onstart = () => {
+            micBtn.classList.add('mic-listening');
+            micBtn.innerHTML = '<span class="material-icons">stop</span>';
+            userInput.placeholder = 'Đang nghe bạn nói...';
+            sendBtn.disabled = true;
         };
-        reader.readAsDataURL(file);
-        detectResult.style.display = 'none';
-      }
+
+        recognition.onresult = (event) => {
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + ' ';
+                }
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Voice error:', event.error);
+            resetMicUI();
+        };
+
+        recognition.onend = () => {
+            resetMicUI();
+            // Tự động GỬI nếu có nội dung
+            const text = finalTranscript.trim();
+            if (text.length > 0) {
+                userInput.value = text;
+                userInput.dispatchEvent(new Event('input'));
+                // Trigger submit form
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+            recognition = null;
+        };
+        
+        recognition.start();
     });
 
-    detectForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
+    function resetMicUI() {
+        micBtn.classList.remove('mic-listening');
+        micBtn.innerHTML = '<span class="material-icons">mic</span>';
+        userInput.placeholder = 'Nhập tin nhắn hoặc bấm Mic để nói...';
+        sendBtn.disabled = false;
+    }
+
+    // ... (Giữ nguyên logic Law Lookup) ...
+    lawLookupForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const message = lawInput.value.trim();
+        if (!message) return;
+        const selectedModel = lawModelSelector.value; 
+        addLawMessage(message, 'user');
+        lawInput.value = '';
+        lawSendBtn.disabled = true;
+        try {
+            const response = await fetch('/chat-law-lookup', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ message: message, model: selectedModel }) 
+            });
+            const data = await response.json();
+            let modelName = selectedModel === 'gemini' ? 'Gemini' : (selectedModel === 'openai' ? 'OpenAI' : 'DeepSeek');
+            if (response.ok) addLawMessage(data.response, 'ai', modelName + ' (Tra cứu)');
+            else addLawMessage('Lỗi: ' + data.error, 'ai', modelName);
+        } catch (error) { addLawMessage('Lỗi kết nối: ' + error.message, 'ai', 'Lỗi'); } 
+        finally { lawSendBtn.disabled = false; }
+    });
+    
+    // ... (Giữ nguyên logic Event to Chat) ...
+    async function sendEventToChat(systemMessage, imageBase64 = null, mimeType = null) {
+      const endpoint = '/chat-aggregate'; 
+      let messageParts = [{ 'text': systemMessage }];
+      let userMessageHtml = `<p>${systemMessage}</p>`;
       
-      if (!fileInput.files[0]) {
-        alert('Vui lòng chọn một hình ảnh!');
-        return;
+      if (imageBase64 && mimeType) {
+        messageParts.push({ 'inline_data': { 'mime_type': mimeType, 'data': imageBase64 } });
+        userMessageHtml += `<img src="data:${mimeType};base64,${imageBase64}" alt="Ảnh sự kiện" style="max-width: 200px; border-radius: 8px; margin-top: 8px;">`;
       }
-      
-      const formData = new FormData();
-      formData.append('file', fileInput.files[0]);
-      
-      detectBtn.disabled = true;
-      detectBtn.classList.add('loading');
-      detectResult.style.display = 'none';
-      
+      addMessage(userMessageHtml, 'user');
       try {
-        const response = await fetch('/detect-sign', {
-          method: 'POST',
-          body: formData
+        const response = await fetch(endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ parts: messageParts, history: chatHistory })
         });
         const data = await response.json();
-        
         if (response.ok) {
-          resultText.textContent = data.result;
-          detectResult.style.display = 'block';
-
-          let oldImg = document.getElementById('annotatedImgSign');
-          if (oldImg) oldImg.remove();
+          let responseHtml = `<p>${data.final_answer}</p>`; // Rút gọn cho event
+          const aiMsg = addMessage(responseHtml, 'ai', data.final_answer);
+          chatHistory.push({ role: 'user', parts: messageParts });
+          chatHistory.push({ role: 'model', parts: [{ text: data.final_answer }] });
           
-          if (data.image_path) {
-            const annotatedImgUrl = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
-            let annotatedImg = document.createElement('img');
-            annotatedImg.id = 'annotatedImgSign';
-            annotatedImg.src = annotatedImgUrl;
-            annotatedImg.alt = 'Ảnh đã nhận diện';
-            annotatedImg.style.maxWidth = '100%';
-            annotatedImg.style.maxHeight = '500px';
-            annotatedImg.style.borderRadius = 'var(--border-radius)';
-            annotatedImg.style.marginTop = '16px';
-            resultText.parentNode.insertBefore(annotatedImg, resultText.nextSibling);
+          // Auto speak event response
+          const ttsBtn = aiMsg.querySelector('.tts-button');
+          if (ttsBtn) speakMessage(data.final_answer, ttsBtn);
+        } 
+      } catch (error) { console.error(error); }
+    }
+
+    btnClearChat.addEventListener('click', () => { chatMessages.innerHTML = ''; chatHistory = []; stopSpeech(); });
+    btnToggleSidebar.addEventListener('click', () => { sidebar.classList.toggle('open'); btnToggleSidebar.setAttribute('aria-expanded', sidebar.classList.contains('open')); });
+
+    // ===== NAVIGATION =====
+    function showChatSection() {
+      mainChatSection.style.display = 'flex'; lawLookupSection.style.display = 'none'; 
+      detectSignSection.style.display = 'none'; sleepDetectSection.style.display = 'none'; 
+      stopAllCameras(); stopSpeech();
+    }
+    function showDetectSignSection() {
+      mainChatSection.style.display = 'none'; lawLookupSection.style.display = 'none'; 
+      detectSignSection.style.display = 'flex'; sleepDetectSection.style.display = 'none'; 
+      stopSleepCamera(); stopSpeech();
+    }
+    function showSleepDetectSection() {
+      mainChatSection.style.display = 'none'; lawLookupSection.style.display = 'none'; 
+      detectSignSection.style.display = 'none'; sleepDetectSection.style.display = 'flex'; 
+      stopSignCamera(); stopSpeech();
+    }
+    function showLawLookupSection() {
+      mainChatSection.style.display = 'none'; lawLookupSection.style.display = 'flex'; 
+      detectSignSection.style.display = 'none'; sleepDetectSection.style.display = 'none'; 
+      stopAllCameras(); stopSpeech();
+    }
+
+    chatMenu.addEventListener('click', (e) => { e.preventDefault(); showChatSection(); });
+    detectSignMenu.addEventListener('click', (e) => { e.preventDefault(); showDetectSignSection(); });
+    sleepDetectMenu.addEventListener('click', (e) => { e.preventDefault(); showSleepDetectSection(); });
+    lawLookupMenu.addEventListener('click', (e) => { e.preventDefault(); showLawLookupSection(); });
+    document.addEventListener('DOMContentLoaded', showChatSection);
+
+    // ===== CAMERA & LOGIC (ĐÃ UPDATE HIỂN THỊ ẢNH KẾT QUẢ) =====
+    async function startSignCamera() { try { signStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 640, height: 480 } }); signVideo.srcObject = signStream; } catch (error) { alert('Lỗi Camera: ' + error.message); } }
+    function stopSignCamera() { if (signStream) { signStream.getTracks().forEach(track => track.stop()); signStream = null; signVideo.srcObject = null; } }
+    signCameraBtn.addEventListener('click', () => { signCameraBtn.classList.add('active'); signUploadBtn.classList.remove('active'); signCameraContainer.style.display = 'flex'; detectForm.style.display = 'none'; detectResult.style.display = 'none'; startSignCamera(); });
+    signUploadBtn.addEventListener('click', () => { signUploadBtn.classList.add('active'); signCameraBtn.classList.remove('active'); signCameraContainer.style.display = 'none'; detectForm.style.display = 'flex'; detectResult.style.display = 'none'; stopSignCamera(); });
+    signCloseCameraBtn.addEventListener('click', stopSignCamera);
+    
+    signCaptureBtn.addEventListener('click', async () => {
+      if (!signStream) return;
+      signCanvas.width = signVideo.videoWidth; signCanvas.height = signVideo.videoHeight;
+      signCanvas.getContext('2d').drawImage(signVideo, 0, 0);
+      signCaptureBtn.disabled = true; signCaptureBtn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
+      signCanvas.toBlob(async (blob) => {
+        const formData = new FormData(); formData.append('file', blob, 'capture.jpg');
+        try {
+          const response = await fetch('/detect-sign', { method: 'POST', body: formData });
+          const data = await response.json();
+          if (response.ok) {
+            resultText.textContent = data.result; detectResult.style.display = 'block';
+            
+            // HIỂN THỊ ẢNH KẾT QUẢ
+            const oldImg = document.getElementById('annotatedImgSign'); if (oldImg) oldImg.remove();
+            if (data.image_path) {
+              const img = document.createElement('img'); img.id = 'annotatedImgSign';
+              img.src = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
+              img.style.cssText = 'max-width:100%; margin-top:15px; border-radius:12px; border:2px solid var(--accent-color);';
+              resultText.parentNode.insertBefore(img, resultText.nextSibling);
+            }
+            
+            // --- ĐÃ TẮT GỬI QUA AI THEO YÊU CẦU ---
+            /*
+            if (data.detections && data.detections.length > 0) {
+               showChatSection(); sendEventToChat(`Phát hiện biển báo: ${data.detections[0].class}. Hãy tư vấn lái xe.`);
+            }
+            */
+            console.log("Phát hiện biển báo, nhưng không gửi AI.");
+
           }
-
-          detectResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } else {
-          alert('Lỗi: ' + data.error);
-        }
-      } catch (error) {
-        alert('Lỗi khi upload: ' + error.message);
-      } finally {
-        detectBtn.disabled = false;
-        detectBtn.classList.remove('loading');
-      }
+        } catch (e) { alert(e.message); } finally { signCaptureBtn.disabled = false; signCaptureBtn.innerHTML = '<span class="material-icons">camera_alt</span> Chụp và Nhận Diện'; }
+      }, 'image/jpeg', 0.95);
     });
 
-    downloadBtn.addEventListener('click', () => {
-      const blob = new Blob([resultText.textContent], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'ket_qua_nhan_dien.txt';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
+    // Sleep Logic
+    async function startSleepCamera() { try { sleepStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } }); sleepVideo.srcObject = sleepStream; } catch (e) { alert(e.message); } }
+    function stopSleepCamera() { if (sleepStream) { sleepStream.getTracks().forEach(track => track.stop()); sleepStream = null; sleepVideo.srcObject = null; } }
+    sleepCameraBtn.addEventListener('click', () => { sleepCameraBtn.classList.add('active'); sleepUploadBtn.classList.remove('active'); sleepCameraContainer.style.display = 'flex'; sleepDetectForm.style.display = 'none'; sleepDetectResult.style.display = 'none'; startSleepCamera(); });
+    sleepUploadBtn.addEventListener('click', () => { sleepUploadBtn.classList.add('active'); sleepCameraBtn.classList.remove('active'); sleepCameraContainer.style.display = 'none'; sleepDetectForm.style.display = 'flex'; sleepDetectResult.style.display = 'none'; stopSleepCamera(); });
+    sleepCloseCameraBtn.addEventListener('click', stopSleepCamera);
 
-    sleepFileInput.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        if (file.size > 16 * 1024 * 1024) {
-          alert('File quá lớn! Vui lòng chọn file nhỏ hơn 16MB.');
-          sleepFileInput.value = '';
-          return;
-        }
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
-        if (!validTypes.includes(file.type)) {
-          alert('Định dạng file không hợp lệ! Chỉ chấp nhận JPG, PNG, JPEG.');
-          sleepFileInput.value = '';
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          sleepImagePreview.src = event.target.result;
-          sleepImagePreview.classList.add('show');
-          sleepFileLabel.classList.add('has-file');
-          sleepFileLabel.querySelector('span:nth-child(2)').textContent = file.name;
-        };
-        reader.readAsDataURL(file);
-        sleepDetectResult.style.display = 'none';
-      }
+    sleepCaptureBtn.addEventListener('click', async () => {
+      if (!sleepStream) return;
+      sleepCanvas.width = sleepVideo.videoWidth; sleepCanvas.height = sleepVideo.videoHeight;
+      sleepCanvas.getContext('2d').drawImage(sleepVideo, 0, 0);
+      sleepCaptureBtn.disabled = true; sleepCaptureBtn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
+      sleepCanvas.toBlob(async (blob) => {
+        const formData = new FormData(); formData.append('file', blob, 'capture.jpg');
+        try {
+          const response = await fetch('/detect-sleep', { method: 'POST', body: formData });
+          const data = await response.json();
+          if (response.ok) {
+            sleepResultText.textContent = data.result; sleepDetectResult.style.display = 'block';
+            
+            // HIỂN THỊ ẢNH KẾT QUẢ VỚI VIỀN ĐỘNG
+            const oldImg = document.getElementById('annotatedImgSleep'); if (oldImg) oldImg.remove();
+            if (data.image_path) {
+              const img = document.createElement('img'); img.id = 'annotatedImgSleep';
+              img.src = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
+              
+              // Logic màu viền
+              let borderColor = '#94a3b8';
+              if (data.result.includes("NGỦ GẬT")) borderColor = 'var(--error-color)';
+              else if (data.result.includes("TỈNH TÁO")) borderColor = 'var(--success-color)';
+              
+              img.style.cssText = `max-width:100%; margin-top:15px; border-radius:12px; border:3px solid ${borderColor};`;
+              sleepResultText.parentNode.insertBefore(img, sleepResultText.nextSibling);
+            }
+
+             if (data.result && data.result.includes("NGỦ GẬT")) {
+                showChatSection(); sendEventToChat("Cảnh báo: Tài xế đang ngủ gật! Hãy phát cảnh báo ngay lập tức.");
+            }
+          }
+        } catch (e) { alert(e.message); } finally { sleepCaptureBtn.disabled = false; sleepCaptureBtn.innerHTML = '<span class="material-icons">camera_alt</span> Chụp và Nhận Diện'; }
+      }, 'image/jpeg', 0.95);
+    });
+    
+    // Upload logic
+    detectForm.addEventListener('submit', async (e) => {
+      e.preventDefault(); if(!fileInput.files[0]) return;
+      const formData = new FormData(); formData.append('file', fileInput.files[0]);
+      detectBtn.disabled=true; detectBtn.classList.add('loading');
+      try {
+         const res = await fetch('/detect-sign', {method: 'POST', body: formData});
+         const data = await res.json();
+         if(res.ok) {
+             resultText.textContent = data.result; detectResult.style.display='block';
+             // HIỂN THỊ ẢNH
+            const oldImg = document.getElementById('annotatedImgSign'); if (oldImg) oldImg.remove();
+            if (data.image_path) {
+              const img = document.createElement('img'); img.id = 'annotatedImgSign';
+              img.src = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
+              img.style.cssText = 'max-width:100%; margin-top:15px; border-radius:12px; border:2px solid var(--accent-color);';
+              resultText.parentNode.insertBefore(img, resultText.nextSibling);
+            }
+
+             // --- ĐÃ TẮT GỬI QUA AI THEO YÊU CẦU ---
+             // if(data.detections?.length) { showChatSection(); sendEventToChat(`Phát hiện biển báo từ ảnh upload: ${data.detections[0].class}`); }
+             console.log("Upload biển báo thành công, nhưng không gửi AI.");
+         }
+      } catch(e) { alert(e.message); } finally { detectBtn.disabled=false; detectBtn.classList.remove('loading'); }
     });
 
     sleepDetectForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      if (!sleepFileInput.files[0]) {
-        alert('Vui lòng chọn một hình ảnh!');
-        return;
-      }
-      
-      const formData = new FormData();
-      formData.append('file', sleepFileInput.files[0]);
-      
-      sleepDetectBtn.disabled = true;
-      sleepDetectBtn.classList.add('loading');
-      sleepDetectResult.style.display = 'none';
-      
-      try {
-        const response = await fetch('/detect-sleep', {
-          method: 'POST',
-          body: formData
-        });
-        const data = await response.json();
-        
-        if (response.ok) {
-          sleepResultText.textContent = data.result;
-          sleepDetectResult.style.display = 'block';
+        e.preventDefault(); if(!sleepFileInput.files[0]) return;
+        const formData = new FormData(); formData.append('file', sleepFileInput.files[0]);
+        sleepDetectBtn.disabled=true; sleepDetectBtn.classList.add('loading');
+        try {
+            const res = await fetch('/detect-sleep', {method: 'POST', body: formData});
+            const data = await res.json();
+            if(res.ok) {
+                sleepResultText.textContent = data.result; sleepDetectResult.style.display='block';
+                
+                // HIỂN THỊ ẢNH VỚI VIỀN ĐỘNG
+                const oldImg = document.getElementById('annotatedImgSleep'); if (oldImg) oldImg.remove();
+                if (data.image_path) {
+                  const img = document.createElement('img'); img.id = 'annotatedImgSleep';
+                  img.src = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
+                  
+                  let borderColor = '#94a3b8';
+                  if (data.result.includes("NGỦ GẬT")) borderColor = 'var(--error-color)';
+                  else if (data.result.includes("TỈNH TÁO")) borderColor = 'var(--success-color)';
 
-          let oldImg = document.getElementById('annotatedImgSleep');
-          if (oldImg) oldImg.remove();
+                  img.style.cssText = `max-width:100%; margin-top:15px; border-radius:12px; border:3px solid ${borderColor};`;
+                  sleepResultText.parentNode.insertBefore(img, sleepResultText.nextSibling);
+                }
 
-          if (data.image_path) {
-            const annotatedImgUrl = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
-            let annotatedImg = document.createElement('img');
-            annotatedImg.id = 'annotatedImgSleep';
-            annotatedImg.src = annotatedImgUrl;
-            annotatedImg.alt = 'Ảnh đã nhận diện ngủ gật';
-            annotatedImg.style.maxWidth = '100%';
-            annotatedImg.style.maxHeight = '500px';
-            annotatedImg.style.borderRadius = 'var(--border-radius)';
-            annotatedImg.style.marginTop = '16px';
-            sleepResultText.parentNode.insertBefore(annotatedImg, sleepResultText.nextSibling);
-          }
-
-          sleepDetectResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        } else {
-          alert('Lỗi: ' + data.error);
-        }
-      } catch (error) {
-        alert('Lỗi khi upload: ' + error.message);
-      } finally {
-        sleepDetectBtn.disabled = false;
-        sleepDetectBtn.classList.remove('loading');
-      }
+                if(data.result.includes("NGỦ GẬT")) { showChatSection(); sendEventToChat("Phát hiện ngủ gật từ ảnh upload."); }
+            }
+        } catch(e) { alert(e.message); } finally { sleepDetectBtn.disabled=false; sleepDetectBtn.classList.remove('loading'); }
     });
+    
+    fileInput.addEventListener('change', (e) => { if(e.target.files[0]) { const r = new FileReader(); r.onload=(ev)=>{imagePreview.src=ev.target.result; imagePreview.classList.add('show');}; r.readAsDataURL(e.target.files[0]); }});
+    sleepFileInput.addEventListener('change', (e) => { if(e.target.files[0]) { const r = new FileReader(); r.onload=(ev)=>{sleepImagePreview.src=ev.target.result; sleepImagePreview.classList.add('show');}; r.readAsDataURL(e.target.files[0]); }});
+    userInput.addEventListener('input', () => { userInput.style.height = 'auto'; userInput.style.height = userInput.scrollHeight + 'px'; });
+    lawInput.addEventListener('input', () => { lawInput.style.height = 'auto'; lawInput.style.height = lawInput.scrollHeight + 'px'; });
 
-    sleepDownloadBtn.addEventListener('click', () => {
-      const blob = new Blob([sleepResultText.textContent], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'ket_qua_ngu_gat.txt';
-      a.click();
-      URL.revokeObjectURL(url);
-    });
-
-    userInput.addEventListener('input', () => {
-      userInput.style.height = 'auto';
-      userInput.style.height = userInput.scrollHeight + 'px';
-    });
+    window.speechSynthesis.onvoiceschanged = () => { console.log("Voices loaded"); };
   </script>
 </body>
 </html>
