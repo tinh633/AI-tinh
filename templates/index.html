@@ -100,7 +100,7 @@
     .mode-toggle button:hover:not(.active) { background: #f0f9ff; transform: translateY(-2px); }
     .camera-container { width: 100%; max-width: 640px; margin: 0 auto; display: none; flex-direction: column; gap: 16px; align-items: center; }
     .camera-container.active { display: flex; }
-    .camera-container video { width: 100%; max-width: 640px; border-radius: var(--border-radius); box-shadow: 0 4px 20px var(--glass-shadow); background: #000; }
+    .camera-container video { width: 100%; max-width: 640px; border-radius: var(--border-radius); box-shadow: 0 4px 20px var(--glass-shadow); background: #000; transition: border 0.3s ease; }
     .camera-controls { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
     .camera-controls button { background: var(--success-color); color: white; border: none; padding: 12px 24px; border-radius: var(--border-radius); font-size: 1rem; font-weight: 600; cursor: pointer; transition: all var(--transition); display: flex; align-items: center; gap: 8px; }
     .camera-controls button:hover { background: #15803d; transform: translateY(-2px); }
@@ -123,7 +123,7 @@
     #detectBtn .material-icons, #sleepDetectBtn .material-icons { font-size: 24px; }
     .spinner { border: 3px solid rgba(255, 255, 255, 0.3); border-top: 3px solid white; border-radius: 50%; width: 20px; height: 20px; animation: spin 0.8s linear infinite; display: none; }
     @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-    #detectBtn.loading .spinner, #sleepDetectBtn.loading .spinner { display: block; }
+    #detectBtn.loading .spinner, #sleepDetectBtn.loading .spinner, .spinner-inline { display: inline-block; border: 3px solid rgba(255, 255, 255, 0.3); border-top: 3px solid white; border-radius: 50%; width: 18px; height: 18px; animation: spin 0.8s linear infinite; margin-right: 8px;}
     #detectBtn.loading .btn-text, #sleepDetectBtn.loading .btn-text { display: none; }
     .detect-result { background: white; padding: 32px; border-radius: var(--border-radius); box-shadow: 0 4px 20px var(--glass-shadow); animation: slideUp 0.4s ease; }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -140,7 +140,7 @@
       70% { box-shadow: 0 0 0 10px rgba(220, 38, 38, 0); }
       100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
     }
-    .mic-listening {
+    .mic-listening, .listening {
       background-color: var(--error-color) !important;
       animation: pulse-red 1.5s infinite;
     }
@@ -256,6 +256,11 @@
             <option value="openai">OpenAI (Tổng hợp)</option>
             <option value="deepseek">DeepSeek (Tổng hợp)</option>
           </select>
+          
+          <button type="button" id="lawMicBtn" aria-label="Ghi âm Tra cứu" style="background-color: var(--success-color);">
+              <span class="material-icons" aria-hidden="true">mic</span>
+          </button>
+          
           <button type="submit" id="lawSendBtn" aria-label="Gửi câu tra cứu">
             <span class="material-icons" aria-hidden="true">search</span>
           </button>
@@ -306,18 +311,18 @@
 
       <section id="sleepDetectSection" class="sleep-detect-section" style="display: none;" aria-label="Khu vực nhận diện ngủ gật">
         <div class="detect-header">
-          <h2>😴 Nhận Diện Ngủ Gật</h2>
-          <p>Chọn Camera để nhận diện trực tiếp hoặc Upload hình ảnh có sẵn</p>
+          <h2>😴 Nhận Diện Ngủ Gật (Real-time)</h2>
+          <p>Hệ thống sẽ giám sát liên tục. Âm thanh sẽ kêu liên tục cho đến khi tài xế tỉnh lại.</p>
         </div>
         <div class="mode-toggle">
-          <button id="sleepCameraBtn" class="active"><span class="material-icons">videocam</span> Camera</button>
-          <button id="sleepUploadBtn"><span class="material-icons">cloud_upload</span> Upload File</button>
+          <button id="sleepCameraBtn" class="active"><span class="material-icons">videocam</span> Camera Giám Sát</button>
+          <button id="sleepUploadBtn"><span class="material-icons">cloud_upload</span> Upload File (Test)</button>
         </div>
         <div id="sleepCameraContainer" class="camera-container active">
           <video id="sleepVideo" autoplay playsinline></video>
           <canvas id="sleepCanvas" style="display: none;"></canvas>
           <div class="camera-controls">
-            <button id="sleepCaptureBtn"><span class="material-icons">camera_alt</span> Chụp và Nhận Diện</button>
+            <button id="sleepCaptureBtn"><span class="material-icons">play_circle</span> Bắt đầu Giám Sát</button>
             <button id="sleepCloseCameraBtn" class="close-camera"><span class="material-icons">videocam_off</span> Đóng Camera</button>
           </div>
         </div>
@@ -394,7 +399,7 @@
     const signCloseCameraBtn = document.getElementById('signCloseCameraBtn');
     let signStream = null;
 
-    // Sleep Detect
+    // Sleep Detect (UPDATED)
     const sleepDetectMenu = document.getElementById('sleepDetectionMenu');
     const sleepDetectSection = document.getElementById('sleepDetectSection');
     const sleepDetectForm = document.getElementById('sleepDetectForm');
@@ -421,7 +426,9 @@
     const lawInput = document.getElementById('lawInput');
     const lawSendBtn = document.getElementById('lawSendBtn');
     const lawMessages = document.getElementById('lawMessages');
-    const lawModelSelector = document.getElementById('lawModelSelector'); 
+    const lawModelSelector = document.getElementById('lawModelSelector');
+    // BIẾN MỚI CHO MIC TRA CỨU LUẬT
+    const lawMicBtn = document.getElementById('lawMicBtn'); 
     
     let chatHistory = [];
 
@@ -472,15 +479,13 @@
         });
     }
 
-    // ===== HÀM MỚI SỬA LỖI: TẮT TẤT CẢ CAMERA =====
+    // ===== HÀM QUẢN LÝ CAMERA =====
     function stopAllCameras() {
       stopSignCamera();
       stopSleepCamera();
     }
-    // ===============================================
 
-    // ===== CHAT FUNCTIONS =====
-    // Hàm addMessage CHÍNH - Đã update để hỗ trợ nút Loa
+    // ===== CHAT FUNCTIONS (ĐÃ SỬA LỖI) =====
     function addMessage(content, type, textToSpeak = '') {
       const messageDiv = document.createElement('div');
       messageDiv.className = `message ${type}`;
@@ -512,33 +517,61 @@
           contentWrapper.appendChild(speakBtn);
           contentWrapper.appendChild(messageContent);
           messageDiv.appendChild(contentWrapper);
+          
+          chatMessages.appendChild(messageDiv); 
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+
+          return contentWrapper; // Trả về wrapper chứa nút loa
       } else {
           messageDiv.innerHTML = content;
+          chatMessages.appendChild(messageDiv);
+          chatMessages.scrollTop = chatMessages.scrollHeight;
+          return messageDiv;
       }
-
-      chatMessages.appendChild(messageDiv);
-      chatMessages.scrollTop = chatMessages.scrollHeight;
-      return messageDiv; // Trả về element để dùng sau này
     }
     
+    // ===== HÀM HIỂN THỊ TIN NHẮN LUẬT (ĐÃ CẬP NHẬT VOICE) =====
     function addLawMessage(content, type, modelName = '') { 
       const messageDiv = document.createElement('div');
       messageDiv.className = `message ${type}`;
-      if (type === 'ai') content = `<strong>🤖 Phản hồi (${modelName}):</strong><p>${content}</p>`; 
-      messageDiv.innerHTML = content;
-      lawMessages.appendChild(messageDiv);
-      lawMessages.scrollTop = lawMessages.scrollHeight;
-    }
+      
+      if (type === 'ai') {
+          const contentWrapper = document.createElement('div');
+          contentWrapper.style.display = 'flex';
+          contentWrapper.style.gap = '10px';
+          contentWrapper.style.alignItems = 'flex-start';
 
-    async function getBase64FromUrl(url) {
-        const response = await fetch(url);
-        const blob = await response.blob();
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onloadend = () => resolve({ base64: reader.result.split(',')[1], mimeType: blob.type });
-            reader.onerror = reject;
-            reader.readAsDataURL(blob);
-        });
+          // Nút đọc (TTS)
+          const speakBtn = document.createElement('button');
+          speakBtn.className = 'tts-button';
+          speakBtn.innerHTML = '<span class="material-icons">volume_up</span>';
+          speakBtn.setAttribute('aria-label', 'Nghe nội dung luật');
+          
+          const messageContent = document.createElement('div');
+          messageContent.innerHTML = `<strong>🤖 Phản hồi (${modelName}):</strong><p>${content}</p>`;
+          messageContent.style.flexGrow = '1';
+          
+          // Lấy text sạch để đọc (loại bỏ HTML tag)
+          const tempDiv = document.createElement("div");
+          tempDiv.innerHTML = content;
+          const textToSpeak = tempDiv.textContent || tempDiv.innerText || "";
+
+          speakBtn.onclick = () => {
+              stopSpeech();
+              speakMessage(textToSpeak, speakBtn);
+          };
+
+          contentWrapper.appendChild(speakBtn);
+          contentWrapper.appendChild(messageContent);
+          messageDiv.appendChild(contentWrapper);
+          
+          lawMessages.appendChild(messageDiv);
+          return contentWrapper;
+      } else {
+          messageDiv.innerHTML = content;
+          lawMessages.appendChild(messageDiv);
+      }
+      lawMessages.scrollTop = lawMessages.scrollHeight;
     }
 
     // ----- XỬ LÝ GỬI TIN NHẮN CHAT -----
@@ -596,14 +629,14 @@
             finalAnswer = data.response;
           }
           
-          // Thêm tin nhắn AI và lấy element trả về
-          const aiMsgElement = addMessage(responseHtml, 'ai', finalAnswer);
+          // Thêm tin nhắn AI
+          const aiMsgWrapper = addMessage(responseHtml, 'ai', finalAnswer);
           
           chatHistory.push({ role: 'user', parts: messageParts }); 
           chatHistory.push({ role: 'model', parts: [{ text: finalAnswer }] });
 
           // === AUTO TTS: Tự động đọc phản hồi ===
-          const ttsBtn = aiMsgElement.querySelector('.tts-button');
+          const ttsBtn = aiMsgWrapper.querySelector('.tts-button');
           if (ttsBtn && finalAnswer) {
               stopSpeech();
               speakMessage(finalAnswer, ttsBtn);
@@ -620,7 +653,7 @@
       }
     });
 
-    // ----- XỬ LÝ MIC (Ghi âm -> Tự gửi) -----
+    // ----- XỬ LÝ MIC CHAT (Ghi âm -> Tự gửi) -----
     micBtn.addEventListener('click', () => {
         if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
             alert('Trình duyệt không hỗ trợ Voice. Hãy dùng Chrome/Edge.');
@@ -686,7 +719,73 @@
         sendBtn.disabled = false;
     }
 
-    // ... (Giữ nguyên logic Law Lookup) ...
+    // ----- XỬ LÝ MIC CHO TRA CỨU LUẬT (MỚI) -----
+    lawMicBtn.addEventListener('click', () => {
+        if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+            alert('Trình duyệt không hỗ trợ Voice. Hãy dùng Chrome/Edge.');
+            return;
+        }
+
+        stopSpeech(); // Dừng AI đang nói
+
+        // Logic bật/tắt mic
+        if (lawMicBtn.classList.contains('mic-listening')) {
+                if (recognition) recognition.stop();
+                return;
+        }
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        recognition = new SpeechRecognition();
+        recognition.lang = 'vi-VN';
+        recognition.interimResults = false;
+        recognition.maxAlternatives = 1;
+
+        let finalTranscript = '';
+
+        recognition.onstart = () => {
+            lawMicBtn.classList.add('mic-listening');
+            lawMicBtn.innerHTML = '<span class="material-icons">stop</span>';
+            lawInput.placeholder = 'Đang nghe câu hỏi luật...';
+            lawSendBtn.disabled = true;
+        };
+
+        recognition.onresult = (event) => {
+            for (let i = event.resultIndex; i < event.results.length; i++) {
+                if (event.results[i].isFinal) {
+                    finalTranscript += event.results[i][0].transcript + ' ';
+                }
+            }
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Voice error:', event.error);
+            resetLawMicUI();
+        };
+
+        recognition.onend = () => {
+            resetLawMicUI();
+            // Tự động GỬI nếu có nội dung
+            const text = finalTranscript.trim();
+            if (text.length > 0) {
+                lawInput.value = text;
+                lawInput.dispatchEvent(new Event('input')); 
+                // Trigger submit form luật
+                lawLookupForm.dispatchEvent(new Event('submit'));
+            }
+            recognition = null;
+        };
+        
+        recognition.start();
+    });
+
+    function resetLawMicUI() {
+        lawMicBtn.classList.remove('mic-listening');
+        lawMicBtn.innerHTML = '<span class="material-icons">mic</span>';
+        lawInput.placeholder = "Nhập câu hỏi, ví dụ: 'vượt đèn đỏ phạt bao nhiêu?'";
+        lawSendBtn.disabled = false;
+    }
+
+    // ... Law Lookup Logic (Updated) ...
     lawLookupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         const message = lawInput.value.trim();
@@ -702,13 +801,17 @@
             });
             const data = await response.json();
             let modelName = selectedModel === 'gemini' ? 'Gemini' : (selectedModel === 'openai' ? 'OpenAI' : 'DeepSeek');
-            if (response.ok) addLawMessage(data.response, 'ai', modelName + ' (Tra cứu)');
-            else addLawMessage('Lỗi: ' + data.error, 'ai', modelName);
+            if (response.ok) {
+                addLawMessage(data.response, 'ai', modelName + ' (Tra cứu)');
+            }
+            else {
+                addLawMessage('Lỗi: ' + data.error, 'ai', modelName);
+            }
         } catch (error) { addLawMessage('Lỗi kết nối: ' + error.message, 'ai', 'Lỗi'); } 
         finally { lawSendBtn.disabled = false; }
     });
     
-    // ... (Giữ nguyên logic Event to Chat) ...
+    // ... Event to Chat Logic ...
     async function sendEventToChat(systemMessage, imageBase64 = null, mimeType = null) {
       const endpoint = '/chat-aggregate'; 
       let messageParts = [{ 'text': systemMessage }];
@@ -727,18 +830,22 @@
         const data = await response.json();
         if (response.ok) {
           let responseHtml = `<p>${data.final_answer}</p>`; // Rút gọn cho event
-          const aiMsg = addMessage(responseHtml, 'ai', data.final_answer);
+          const aiMsgWrapper = addMessage(responseHtml, 'ai', data.final_answer);
           chatHistory.push({ role: 'user', parts: messageParts });
           chatHistory.push({ role: 'model', parts: [{ text: data.final_answer }] });
           
           // Auto speak event response
-          const ttsBtn = aiMsg.querySelector('.tts-button');
+          const ttsBtn = aiMsgWrapper.querySelector('.tts-button');
           if (ttsBtn) speakMessage(data.final_answer, ttsBtn);
         } 
       } catch (error) { console.error(error); }
     }
 
-    btnClearChat.addEventListener('click', () => { chatMessages.innerHTML = ''; chatHistory = []; stopSpeech(); });
+    btnClearChat.addEventListener('click', () => { 
+        chatMessages.innerHTML = ''; 
+        chatHistory = []; 
+        stopSpeech(); 
+    });
     btnToggleSidebar.addEventListener('click', () => { sidebar.classList.toggle('open'); btnToggleSidebar.setAttribute('aria-expanded', sidebar.classList.contains('open')); });
 
     // ===== NAVIGATION =====
@@ -769,7 +876,7 @@
     lawLookupMenu.addEventListener('click', (e) => { e.preventDefault(); showLawLookupSection(); });
     document.addEventListener('DOMContentLoaded', showChatSection);
 
-    // ===== CAMERA & LOGIC (ĐÃ UPDATE HIỂN THỊ ẢNH KẾT QUẢ) =====
+    // ===== SIGN CAMERA LOGIC =====
     async function startSignCamera() { try { signStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: 640, height: 480 } }); signVideo.srcObject = signStream; } catch (error) { alert('Lỗi Camera: ' + error.message); } }
     function stopSignCamera() { if (signStream) { signStream.getTracks().forEach(track => track.stop()); signStream = null; signVideo.srcObject = null; } }
     signCameraBtn.addEventListener('click', () => { signCameraBtn.classList.add('active'); signUploadBtn.classList.remove('active'); signCameraContainer.style.display = 'flex'; detectForm.style.display = 'none'; detectResult.style.display = 'none'; startSignCamera(); });
@@ -780,7 +887,7 @@
       if (!signStream) return;
       signCanvas.width = signVideo.videoWidth; signCanvas.height = signVideo.videoHeight;
       signCanvas.getContext('2d').drawImage(signVideo, 0, 0);
-      signCaptureBtn.disabled = true; signCaptureBtn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
+      signCaptureBtn.disabled = true; signCaptureBtn.innerHTML = '<span class="spinner-inline"></span> Đang xử lý...';
       signCanvas.toBlob(async (blob) => {
         const formData = new FormData(); formData.append('file', blob, 'capture.jpg');
         try {
@@ -789,7 +896,6 @@
           if (response.ok) {
             resultText.textContent = data.result; detectResult.style.display = 'block';
             
-            // HIỂN THỊ ẢNH KẾT QUẢ
             const oldImg = document.getElementById('annotatedImgSign'); if (oldImg) oldImg.remove();
             if (data.image_path) {
               const img = document.createElement('img'); img.id = 'annotatedImgSign';
@@ -797,64 +903,172 @@
               img.style.cssText = 'max-width:100%; margin-top:15px; border-radius:12px; border:2px solid var(--accent-color);';
               resultText.parentNode.insertBefore(img, resultText.nextSibling);
             }
-            
-            // --- ĐÃ TẮT GỬI QUA AI THEO YÊU CẦU ---
-            /*
-            if (data.detections && data.detections.length > 0) {
-               showChatSection(); sendEventToChat(`Phát hiện biển báo: ${data.detections[0].class}. Hãy tư vấn lái xe.`);
-            }
-            */
-            console.log("Phát hiện biển báo, nhưng không gửi AI.");
-
           }
         } catch (e) { alert(e.message); } finally { signCaptureBtn.disabled = false; signCaptureBtn.innerHTML = '<span class="material-icons">camera_alt</span> Chụp và Nhận Diện'; }
       }, 'image/jpeg', 0.95);
     });
 
-    // Sleep Logic
+    // ============================================================
+    // SLEEP DETECTION LOGIC (LOA KÊU MÃI ĐẾN KHI TỈNH THÌ AI MỚI NÓI)
+    // ============================================================
+    const alarmSound = new Audio('/static/alarm.mp3'); 
+    alarmSound.loop = true; // CẤU HÌNH QUAN TRỌNG: LOOP ÂM THANH
+
+    let isMonitoring = false; 
+    let isAlerting = false; 
+    
+    // Bộ đếm khung hình tỉnh táo liên tiếp
+    let awakeConsecutiveFrames = 0; 
+    const AWAKE_THRESHOLD = 8; // Phải tỉnh 8 lần (~4s) thì mới tắt loa
+
+    // Helper chuyển Blob sang Base64
+    function blobToBase64(blob) {
+        return new Promise((resolve, _) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result.split(',')[1]);
+            reader.readAsDataURL(blob);
+        });
+    }
+
     async function startSleepCamera() { try { sleepStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } }); sleepVideo.srcObject = sleepStream; } catch (e) { alert(e.message); } }
-    function stopSleepCamera() { if (sleepStream) { sleepStream.getTracks().forEach(track => track.stop()); sleepStream = null; sleepVideo.srcObject = null; } }
-    sleepCameraBtn.addEventListener('click', () => { sleepCameraBtn.classList.add('active'); sleepUploadBtn.classList.remove('active'); sleepCameraContainer.style.display = 'flex'; sleepDetectForm.style.display = 'none'; sleepDetectResult.style.display = 'none'; startSleepCamera(); });
-    sleepUploadBtn.addEventListener('click', () => { sleepUploadBtn.classList.add('active'); sleepCameraBtn.classList.remove('active'); sleepCameraContainer.style.display = 'none'; sleepDetectForm.style.display = 'flex'; sleepDetectResult.style.display = 'none'; stopSleepCamera(); });
+    
+    function stopSleepCamera() { 
+        isMonitoring = false; // Dừng vòng lặp
+        sleepCaptureBtn.innerHTML = '<span class="material-icons">play_circle</span> Bắt đầu Giám sát';
+        sleepCaptureBtn.classList.remove('listening');
+        sleepVideo.style.border = "none";
+        alarmSound.pause();
+        alarmSound.currentTime = 0;
+        isAlerting = false; 
+        awakeConsecutiveFrames = 0;
+
+        if (sleepStream) { 
+            sleepStream.getTracks().forEach(track => track.stop()); 
+            sleepStream = null; 
+            sleepVideo.srcObject = null; 
+        } 
+    }
+
+    // Vòng lặp giám sát chính
+    async function monitorSleepLoop() {
+        if (!isMonitoring || !sleepStream) return;
+
+        // 1. Vẽ ảnh
+        sleepCanvas.width = sleepVideo.videoWidth; 
+        sleepCanvas.height = sleepVideo.videoHeight;
+        sleepCanvas.getContext('2d').drawImage(sleepVideo, 0, 0);
+
+        // 2. Gửi ảnh check
+        sleepCanvas.toBlob(async (blob) => {
+            const formData = new FormData(); 
+            formData.append('file', blob, 'realtime_check.jpg');
+
+            try {
+                const response = await fetch('/detect-sleep', { method: 'POST', body: formData });
+                const data = await response.json();
+
+                if (response.ok && isMonitoring) { 
+                    // --- TRƯỜNG HỢP 1: PHÁT HIỆN NGỦ GẬT ---
+                    if (data.result && data.result.includes("NGỦ GẬT")) {
+                        sleepVideo.style.border = "5px solid var(--error-color)"; // Viền đỏ
+                        awakeConsecutiveFrames = 0; // Đang ngủ thì reset bộ đếm tỉnh
+
+                        // Nếu chưa báo động -> BẮT ĐẦU BÁO ĐỘNG
+                        if (!isAlerting) {
+                            console.log("Ngủ gật -> BẬT LOA LOOP");
+                            isAlerting = true; 
+                            // Bật loa (Loop = true ở trên rồi)
+                            try {
+                                await alarmSound.play();
+                            } catch (err) {
+                                console.error("Lỗi play loa:", err);
+                            }
+                            // LƯU Ý: Không gọi AI ở đây. Chỉ gọi khi nào tỉnh lại.
+                        }
+                    } 
+                    // --- TRƯỜNG HỢP 2: TỈNH TÁO ---
+                    else {
+                        sleepVideo.style.border = "5px solid var(--success-color)"; // Viền xanh
+                        
+                        // Nếu đang báo động (Loa đang kêu)
+                        if (isAlerting) {
+                            awakeConsecutiveFrames++; // Tăng điểm tỉnh táo
+
+                            // Nếu tỉnh táo đủ lâu (vượt ngưỡng) -> TẮT LOA -> GỌI AI
+                            if (awakeConsecutiveFrames > AWAKE_THRESHOLD) {
+                                console.log("Đã tỉnh dậy -> TẮT LOA -> GỌI AI");
+                                
+                                // 1. Tắt loa
+                                alarmSound.pause();
+                                alarmSound.currentTime = 0;
+                                isAlerting = false;
+                                awakeConsecutiveFrames = 0;
+
+                                // 2. Gửi ảnh cho AI
+                                const base64Img = await blobToBase64(blob);
+                                showChatSection(); 
+                                sendEventToChat(
+                                    "Hệ thống vừa phát hiện tài xế ngủ gật và còi báo động đã hoạt động cho đến khi tài xế tỉnh lại. Hãy đưa ra lời khuyên hoặc cảnh báo ngay lập tức.", 
+                                    base64Img, 
+                                    "image/jpeg"
+                                );
+                            }
+                        }
+                    }
+                }
+            } catch (e) {
+                console.error("Lỗi loop:", e);
+            } finally {
+                if (isMonitoring) {
+                    setTimeout(monitorSleepLoop, 500); 
+                }
+            }
+        }, 'image/jpeg', 0.7);
+    }
+
+    // Nút Bật/Tắt Camera & Giám sát
+    sleepCameraBtn.addEventListener('click', () => { 
+        sleepCameraBtn.classList.add('active'); 
+        sleepUploadBtn.classList.remove('active'); 
+        sleepCameraContainer.style.display = 'flex'; 
+        sleepDetectForm.style.display = 'none'; 
+        sleepDetectResult.style.display = 'none'; 
+        startSleepCamera(); 
+    });
+
+    sleepUploadBtn.addEventListener('click', () => { 
+        stopSleepCamera(); 
+        sleepUploadBtn.classList.add('active'); 
+        sleepCameraBtn.classList.remove('active'); 
+        sleepCameraContainer.style.display = 'none'; 
+        sleepDetectForm.style.display = 'flex'; 
+        sleepDetectResult.style.display = 'none'; 
+    });
     sleepCloseCameraBtn.addEventListener('click', stopSleepCamera);
 
+    // Nút Start/Stop Monitoring
     sleepCaptureBtn.addEventListener('click', async () => {
-      if (!sleepStream) return;
-      sleepCanvas.width = sleepVideo.videoWidth; sleepCanvas.height = sleepVideo.videoHeight;
-      sleepCanvas.getContext('2d').drawImage(sleepVideo, 0, 0);
-      sleepCaptureBtn.disabled = true; sleepCaptureBtn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
-      sleepCanvas.toBlob(async (blob) => {
-        const formData = new FormData(); formData.append('file', blob, 'capture.jpg');
-        try {
-          const response = await fetch('/detect-sleep', { method: 'POST', body: formData });
-          const data = await response.json();
-          if (response.ok) {
-            sleepResultText.textContent = data.result; sleepDetectResult.style.display = 'block';
-            
-            // HIỂN THỊ ẢNH KẾT QUẢ VỚI VIỀN ĐỘNG
-            const oldImg = document.getElementById('annotatedImgSleep'); if (oldImg) oldImg.remove();
-            if (data.image_path) {
-              const img = document.createElement('img'); img.id = 'annotatedImgSleep';
-              img.src = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
-              
-              // Logic màu viền
-              let borderColor = '#94a3b8';
-              if (data.result.includes("NGỦ GẬT")) borderColor = 'var(--error-color)';
-              else if (data.result.includes("TỈNH TÁO")) borderColor = 'var(--success-color)';
-              
-              img.style.cssText = `max-width:100%; margin-top:15px; border-radius:12px; border:3px solid ${borderColor};`;
-              sleepResultText.parentNode.insertBefore(img, sleepResultText.nextSibling);
-            }
+        if (!sleepStream) return;
 
-             if (data.result && data.result.includes("NGỦ GẬT")) {
-                showChatSection(); sendEventToChat("Cảnh báo: Tài xế đang ngủ gật! Hãy phát cảnh báo ngay lập tức.");
-            }
-          }
-        } catch (e) { alert(e.message); } finally { sleepCaptureBtn.disabled = false; sleepCaptureBtn.innerHTML = '<span class="material-icons">camera_alt</span> Chụp và Nhận Diện'; }
-      }, 'image/jpeg', 0.95);
+        if (!isMonitoring) {
+            // Start
+            isMonitoring = true;
+            sleepCaptureBtn.innerHTML = '<span class="spinner-inline"></span> Đang giám sát... (Dừng)';
+            sleepCaptureBtn.classList.add('listening');
+            monitorSleepLoop(); 
+        } else {
+            // Stop
+            isMonitoring = false;
+            sleepCaptureBtn.innerHTML = '<span class="material-icons">play_circle</span> Bắt đầu Giám sát';
+            sleepCaptureBtn.classList.remove('listening');
+            sleepVideo.style.border = "none";
+            alarmSound.pause();
+            alarmSound.currentTime = 0;
+            isAlerting = false;
+        }
     });
-    
-    // Upload logic
+
+    // Upload Logic (Giữ nguyên cho test file)
     detectForm.addEventListener('submit', async (e) => {
       e.preventDefault(); if(!fileInput.files[0]) return;
       const formData = new FormData(); formData.append('file', fileInput.files[0]);
@@ -864,18 +1078,13 @@
          const data = await res.json();
          if(res.ok) {
              resultText.textContent = data.result; detectResult.style.display='block';
-             // HIỂN THỊ ẢNH
-            const oldImg = document.getElementById('annotatedImgSign'); if (oldImg) oldImg.remove();
-            if (data.image_path) {
+             const oldImg = document.getElementById('annotatedImgSign'); if (oldImg) oldImg.remove();
+             if (data.image_path) {
               const img = document.createElement('img'); img.id = 'annotatedImgSign';
               img.src = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
               img.style.cssText = 'max-width:100%; margin-top:15px; border-radius:12px; border:2px solid var(--accent-color);';
               resultText.parentNode.insertBefore(img, resultText.nextSibling);
             }
-
-             // --- ĐÃ TẮT GỬI QUA AI THEO YÊU CẦU ---
-             // if(data.detections?.length) { showChatSection(); sendEventToChat(`Phát hiện biển báo từ ảnh upload: ${data.detections[0].class}`); }
-             console.log("Upload biển báo thành công, nhưng không gửi AI.");
          }
       } catch(e) { alert(e.message); } finally { detectBtn.disabled=false; detectBtn.classList.remove('loading'); }
     });
@@ -889,21 +1098,17 @@
             const data = await res.json();
             if(res.ok) {
                 sleepResultText.textContent = data.result; sleepDetectResult.style.display='block';
-                
-                // HIỂN THỊ ẢNH VỚI VIỀN ĐỘNG
                 const oldImg = document.getElementById('annotatedImgSleep'); if (oldImg) oldImg.remove();
                 if (data.image_path) {
                   const img = document.createElement('img'); img.id = 'annotatedImgSleep';
                   img.src = `/uploads/${data.image_path}?t=${new Date().getTime()}`;
-                  
                   let borderColor = '#94a3b8';
                   if (data.result.includes("NGỦ GẬT")) borderColor = 'var(--error-color)';
                   else if (data.result.includes("TỈNH TÁO")) borderColor = 'var(--success-color)';
-
                   img.style.cssText = `max-width:100%; margin-top:15px; border-radius:12px; border:3px solid ${borderColor};`;
                   sleepResultText.parentNode.insertBefore(img, sleepResultText.nextSibling);
                 }
-
+                // Test upload thì cảnh báo luôn
                 if(data.result.includes("NGỦ GẬT")) { showChatSection(); sendEventToChat("Phát hiện ngủ gật từ ảnh upload."); }
             }
         } catch(e) { alert(e.message); } finally { sleepDetectBtn.disabled=false; sleepDetectBtn.classList.remove('loading'); }

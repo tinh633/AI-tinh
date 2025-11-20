@@ -29,7 +29,7 @@ except ImportError:
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static') 
 CORS(app)
 
 # Cấu hình thư mục upload
@@ -73,6 +73,11 @@ except Exception as e:
 
 try:
     openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = openai_client.responses.create(
+    model="gpt-5-nano",
+    input="write a haiku about ai",
+    store=True,
+    )
 except Exception as e:
     openai_client = None
     logging.warning(f"⚠️ Lỗi cấu hình OpenAI: {e}")
@@ -349,7 +354,7 @@ def call_deepseek(parts, history):
     try:
         text = " ".join([p.get('text', '') for p in parts])
         resp = deepseek_client.chat.completions.create(
-            model="deepseek/deepseek-chat-v3.1:free", messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": text}]
+            model="deepseek/deepseek-chat-v3.1", messages=[{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": text}]
         )
         return resp.choices[0].message.content
     except Exception as e: return f"Lỗi DeepSeek: {e}"

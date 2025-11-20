@@ -1,4 +1,4 @@
-# law_search.py - Phiên bản V10 (Fix lỗi không đọc được nội dung - Fallback mạnh mẽ)
+# law_search.py - 
 from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
 import urllib.parse
