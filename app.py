@@ -1,10 +1,9 @@
 import os
 import logging
 import time
-import re
+import sys
+import asyncio
 import json
-import base64
-import yaml
 import cv2
 import numpy as np
 from pathlib import Path
@@ -18,16 +17,14 @@ from ultralytics import YOLO
 import google.generativeai as genai
 from openai import OpenAI
 
-# ===== IMPORT MODULE TRA CỨU LUẬT =====
-try:
-    from law_search import search_vbpl_sync
-except ImportError:
-    logging.warning("⚠️ Chưa tìm thấy file law_search.py. Chức năng tra cứu luật sẽ lỗi.")
-    def search_vbpl_sync(q): return "Lỗi: Thiếu file module law_search.py"
+# --- THƯ VIỆN MCP ---
+from mcp import ClientSession, StdioServerParameters
+from mcp.client.stdio import stdio_client
 
 # --- Cấu hình & Logging ---
 load_dotenv()
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
+log = logging
 
 app = Flask(__name__, static_folder='static') 
 CORS(app)
@@ -38,6 +35,56 @@ UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 app.config['UPLOAD_FOLDER'] = str(UPLOAD_FOLDER)
 app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
+async def call_mcp_lookup_async(query_text):
+    """
+    Kết nối tới mcp_server.py an toàn, hỗ trợ tiếng Việt trên Windows.
+    """
+    # 1. Xác định đường dẫn file server (tuyệt đối)
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    server_script = os.path.join(current_dir, "mcp_server.py")
+
+    if not os.path.exists(server_script):
+        log.error(f"❌ Không tìm thấy file server tại: {server_script}")
+        return "Lỗi hệ thống: Thiếu file mcp_server.py"
+
+    # 2. Cấu hình môi trường UTF-8 cho tiến trình con (QUAN TRỌNG)
+    env = os.environ.copy()
+    env["PYTHONUTF8"] = "1"          # Bắt buộc Python dùng UTF-8
+    env["PYTHONIOENCODING"] = "utf-8" # Bắt buộc IO dùng UTF-8
+    env["NB_LOG_LEVEL"] = "ERROR"    # Giảm log rác của thư viện
+
+    # 3. Cấu hình tham số Server
+    server_params = StdioServerParameters(
+        command=sys.executable, # Dùng python hiện tại
+        args=[server_script], 
+        env=env 
+    )
+
+    try:
+        # 4. Kết nối và gọi Tool
+        async with stdio_client(server_params) as (read, write):
+            async with ClientSession(read, write) as session:
+                await session.initialize()
+                
+                # Gọi tool 'luat_lookup' đã định nghĩa bên server
+                result = await session.call_tool("luat_lookup", arguments={"query": query_text})
+                
+                if result.content and hasattr(result.content[0], 'text'):
+                    return result.content[0].text
+                
+                return "Server MCP kết nối thành công nhưng không trả về dữ liệu text."
+                
+    except Exception as e:
+        log.error(f"🔥 Lỗi kết nối MCP: {e}")
+        return f"Hệ thống tra cứu đang khởi động hoặc gặp lỗi. Chi tiết: {e}"
+
+def search_vbpl_sync(query):
+    """Hàm wrapper để Flask (Sync) gọi được MCP (Async)."""
+    try:
+        return asyncio.run(call_mcp_lookup_async(query))
+    except Exception as e:
+        return f"Lỗi Async Loop: {e}"
 
 def remove_accents(input_str):
     """
@@ -328,6 +375,52 @@ def index():
 def uploaded_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
+@app.route('/chat-law-lookup', methods=['POST'])
+def handle_law_lookup():
+    data = request.json
+    query = data.get('message', '')
+    if not query: return jsonify({"error": "Nội dung trống"}), 400
+    
+    log.info(f"🔍 User hỏi: {query}")
+    
+    # 1. Gọi MCP để lấy dữ liệu thô (Snippet + Raw Text)
+    raw_context = search_vbpl_sync(query)
+    
+    # 2. Dùng AI để lọc và trả lời ngắn gọn
+    final_response = raw_context # Mặc định trả về thô nếu AI lỗi
+    
+    # Ưu tiên dùng OpenAI hoặc Gemini để format đẹp
+    try:
+        if openai_client:
+            prompt = f"""
+            Bạn là luật sư giao thông AI. Dưới đây là dữ liệu tìm kiếm thô từ internet:
+            
+            {raw_context}
+            
+            NHIỆM VỤ: 
+            1. Trả lời câu hỏi: "{query}"
+            2. Chỉ dùng thông tin từ dữ liệu trên (đặc biệt chú ý Nghị định 168 hoặc quy định 2025).
+            3. Trình bày ngắn gọn, dùng Markdown (in đậm mức phạt).
+            """
+            resp = openai_client.chat.completions.create(
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}]
+            )
+            final_response = resp.choices[0].message.content
+            
+        elif gemini_model:
+            prompt = f"Dựa vào dữ liệu thô sau:\n{raw_context}\n\nHãy trả lời câu hỏi: '{query}' ngắn gọn, chính xác theo luật mới nhất 2025."
+            resp = gemini_model.generate_content(prompt)
+            final_response = resp.text
+            
+    except Exception as e:
+        log.error(f"Lỗi AI tổng hợp: {e}")
+        # Nếu AI lỗi, vẫn trả về dữ liệu thô từ MCP để user đọc
+        pass 
+        
+    return jsonify({"response": final_response})
+
+
 # --- Chat Handlers ---
 SYSTEM_PROMPT = "Bạn là trợ lý lái xe AI thông minh. Trả lời ngắn gọn, hữu ích."
 
@@ -389,18 +482,6 @@ def handle_aggregate():
     final = call_gemini([{'text': summary_prompt}], [])
     return jsonify({"final_answer": final, "sources": results})
 
-# --- Law Lookup ---
-@app.route('/chat-law-lookup', methods=['POST'])
-def handle_law_lookup():
-    data = request.json
-    query = data.get('message', '')
-    if not query: return jsonify({"error": "Nội dung trống"}), 400
-    try:
-        context = search_vbpl_sync(query)
-        prompt = f"Dựa vào luật sau:\n{context}\n\nTrả lời câu hỏi: '{query}' ngắn gọn, chính xác."
-        response = call_gemini([{'text': prompt}], [])
-        return jsonify({"response": response})
-    except Exception as e: return jsonify({"error": str(e)}), 500
 
 # --- Detection Endpoints ---
 @app.route('/detect-sign', methods=['POST'])
@@ -426,4 +507,4 @@ def route_detect_sleep():
     return jsonify({"error": "Invalid file"}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    app.run(debug=True, port=5000, use_reloader=False)
